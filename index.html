@@ -7,7 +7,7 @@
   <style>
     /* --- CSS STYLES --- */
     body {
-      font-family: Arial, sans-serif;
+      font-family: 'Inter', Arial, sans-serif; /* Using Inter font */
       margin: 20px;
       max-width: 800px;
       line-height: 1.6;
@@ -18,12 +18,17 @@
       align-items: center;
       min-height: 100vh;
       box-sizing: border-box;
+      padding-bottom: 50px; /* Add padding for bottom elements */
     }
     h1 {
       color: #2c3e50;
       text-align: center;
       margin-bottom: 30px;
       font-size: 2.2em;
+      border-bottom: 2px solid #3498db;
+      padding-bottom: 10px;
+      width: 100%;
+      max-width: 700px;
     }
     .quiz-container {
       background-color: #ffffff;
@@ -52,24 +57,44 @@
       color: #34495e;
     }
     .options label {
-      display: flex; /* Use flexbox for better alignment of radio and text */
+      display: flex;
       align-items: center;
       margin-bottom: 8px;
       cursor: pointer;
       padding: 10px 15px;
       border-radius: 6px;
       transition: background-color 0.2s ease, transform 0.1s ease;
-      border: 1px solid #e0e0e0; /* Add a subtle border to options */
+      border: 1px solid #e0e0e0;
     }
     .options label:hover {
-      background-color: #f5f8ff; /* Lighter hover */
-      transform: translateY(-2px); /* Slight lift on hover */
+      background-color: #f5f8ff;
+      transform: translateY(-2px);
     }
     .options input[type="radio"] {
       margin-right: 12px;
-      transform: scale(1.2); /* Slightly larger radio buttons */
+      transform: scale(1.2);
     }
-    .submit-btn {
+    .question-actions {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 10px;
+    }
+    .validate-btn {
+      padding: 8px 15px;
+      font-size: 0.9em;
+      background-color: #83c1e2;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-left: 10px;
+      transition: background-color 0.2s ease, transform 0.1s ease;
+    }
+    .validate-btn:hover {
+      background-color: #61a7d6;
+      transform: translateY(-1px);
+    }
+    .submit-btn, .retake-btn {
       display: block;
       width: 100%;
       padding: 15px 20px;
@@ -83,10 +108,19 @@
       transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease;
       box-shadow: 0 4px 10px rgba(52, 152, 219, 0.3);
     }
-    .submit-btn:hover {
+    .submit-btn:hover, .retake-btn:hover {
       background-color: #2980b9;
       transform: translateY(-2px);
       box-shadow: 0 6px 15px rgba(41, 128, 185, 0.4);
+    }
+    .retake-btn {
+        background-color: #2ecc71; /* Green for retake */
+        box-shadow: 0 4px 10px rgba(46, 204, 113, 0.3);
+        display: none; /* Hidden by default */
+    }
+    .retake-btn:hover {
+        background-color: #27ae60;
+        box-shadow: 0 6px 15px rgba(39, 174, 96, 0.4);
     }
     .result {
       margin-top: 10px;
@@ -105,6 +139,17 @@
       color: #e74c3c;
       background-color: #ffe6e6;
       border: 1px solid #f0a8a8;
+    }
+    .explanation {
+      margin-top: 10px;
+      padding: 10px 15px;
+      background-color: #f0f8ff; /* Light blue background for explanation */
+      border: 1px solid #aed6f1; /* Border for explanation */
+      border-radius: 6px;
+      font-size: 0.9em;
+      color: #2c3e50;
+      line-height: 1.5;
+      display: none; /* Hidden by default */
     }
     .score-container {
       margin-top: 40px;
@@ -127,6 +172,15 @@
         border: 1px solid #e74c3c;
         border-radius: 8px;
     }
+    .options input[type="radio"]:disabled + span {
+      cursor: not-allowed;
+      opacity: 0.7;
+    }
+    .options label:has(input[type="radio"]:disabled) {
+        cursor: not-allowed;
+        background-color: #f0f0f0; /* Grey out disabled options */
+        transform: none; /* No hover effect on disabled */
+    }
 
     /* Responsive adjustments */
     @media (max-width: 600px) {
@@ -136,12 +190,13 @@
         h1 {
             font-size: 1.8em;
             margin-bottom: 20px;
+            padding-bottom: 8px;
         }
         .quiz-container {
             padding: 15px;
             border-radius: 8px;
         }
-        .submit-btn {
+        .submit-btn, .retake-btn {
             font-size: 1.1em;
             padding: 12px 15px;
         }
@@ -154,6 +209,7 @@
         }
     }
   </style>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
   <h1>PEGACPSA23V1 Exam Quiz</h1>
@@ -161,6 +217,7 @@
     <form id="quiz-form">
       <div id="questions-container">Loading questions...</div>
       <button type="submit" class="submit-btn">Submit Answers</button>
+      <button type="button" id="retake-quiz-btn" class="retake-btn">Retake Quiz</button>
     </form>
     <div id="score-container" class="score-container"></div>
     <div id="error-message" class="error-message"></div>
@@ -168,6 +225,17 @@
 
   <script>
     /* --- JAVASCRIPT LOGIC --- */
+
+    /**
+     * Shuffles an array in place using the Fisher-Yates (Knuth) algorithm.
+     * @param {Array} array - The array to shuffle.
+     */
+    function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]]; // Swap elements
+        }
+    }
 
     /**
      * Parses CSV text into an array of objects.
@@ -187,7 +255,7 @@
         const values = line.split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/).map(v => v.replace(/^"|"$/g, '').trim());
 
         if (values.length !== headers.length) {
-            console.warn(`Skipping malformed row: "${line}" - Mismatched columns. Line: "${line}"`);
+            console.warn(`Skipping malformed row: "${line}" - Mismatched columns. Expected ${headers.length}, got ${values.length}. Line: "${line}"`);
             return null; // Skip this row
         }
 
@@ -219,110 +287,208 @@
           <div class="options">
             ${Object.entries(options).map(([key, value]) => `
               <label>
-                <input type="radio" name="q${index}" value="${key}" /> ${key}. ${value}
+                <input type="radio" name="q${index}" value="${key}" /> <span>${key}. ${value}</span>
               </label>
             `).join('')}
           </div>
           <div class="result" id="result-q${index}"></div>
+          <div class="explanation" id="explanation-q${index}"></div> <!-- Added explanation div -->
+          <div class="question-actions">
+            <button type="button" class="validate-btn" data-question-index="${index}">Validate Answer</button>
+          </div>
         </div>
       `;
     }
 
-    // --- Main Quiz Logic ---
-    document.addEventListener('DOMContentLoaded', () => {
-      const questionsContainer = document.getElementById('questions-container');
-      const quizForm = document.getElementById('quiz-form');
-      const scoreContainer = document.getElementById('score-container');
-      const errorMessageDiv = document.getElementById('error-message');
-      let quizQuestions = []; // Store questions globally accessible after fetch
+    /**
+     * Validates a single question based on user selection and updates UI.
+     * @param {number} index - The index of the question to validate.
+     * @returns {boolean} True if the answer is correct, false otherwise or if no answer selected.
+     */
+    function validateSingleQuestion(index) {
+        const question = quizQuestions[index];
+        const selectedOption = quizForm.querySelector(`input[name="q${index}"]:checked`);
+        const resultElement = document.getElementById(`result-q${index}`);
+        const explanationElement = document.getElementById(`explanation-q${index}`); // Get explanation element
+        const questionDiv = document.querySelector(`.question[data-question-index="${index}"]`);
 
-      // Fetch questions from CSV
-      fetch('questions.csv')
-        .then(response => {
-          if (!response.ok) {
-            // Check for common client-side network errors or 404s
-            let errorMsg = `HTTP error! Status: ${response.status}`;
-            if (response.status === 404) {
-                errorMsg += ' - questions.csv not found. Make sure it is in the same directory.';
-            } else {
-                errorMsg += ' - Could not load questions.csv.';
-            }
-            throw new Error(errorMsg);
-          }
-          return response.text();
-        })
-        .then(csvText => {
-          quizQuestions = parseCSV(csvText);
-          if (quizQuestions.length === 0) {
-            errorMessageDiv.textContent = 'No questions found in questions.csv or file is empty/malformed. Please check the file content.';
-            questionsContainer.innerHTML = ''; // Clear "Loading questions..."
-            quizForm.querySelector('.submit-btn').style.display = 'none'; // Hide submit button
-            return;
-          }
-          questionsContainer.innerHTML = quizQuestions.map(createQuestionElement).join('');
-        })
-        .catch(error => {
-          console.error('Error loading or parsing questions.csv:', error);
-          errorMessageDiv.textContent = `Failed to load quiz questions: ${error.message}`;
-          questionsContainer.innerHTML = ''; // Clear "Loading questions..."
-          quizForm.querySelector('.submit-btn').style.display = 'none'; // Hide submit button
+        // Clear previous feedback styles
+        resultElement.textContent = '';
+        resultElement.className = 'result'; // Reset classes for result message
+        explanationElement.textContent = ''; // Clear previous explanation
+        explanationElement.style.display = 'none'; // Hide explanation by default
+
+        // Remove previous highlight from options for this question
+        questionDiv.querySelectorAll('label').forEach(label => {
+            label.style.backgroundColor = ''; // Clear background
+            label.style.border = '1px solid #e0e0e0'; // Reset border
         });
 
-      // Handle form submission
-      quizForm.addEventListener('submit', e => {
-        e.preventDefault(); // Prevent default form submission
-
-        let score = 0;
-        quizQuestions.forEach((question, index) => {
-          const selectedOption = quizForm.querySelector(`input[name="q${index}"]:checked`);
-          const resultElement = document.getElementById(`result-q${index}`);
-          const questionDiv = document.querySelector(`.question[data-question-index="${index}"]`);
-
-          // Clear previous feedback styles
-          resultElement.textContent = '';
-          resultElement.className = 'result'; // Reset classes for result message
-
-          // Remove previous highlight from options for this question
-          questionDiv.querySelectorAll('label').forEach(label => {
-              label.style.backgroundColor = ''; // Clear background
-              label.style.border = '1px solid #e0e0e0'; // Reset border
-          });
-
-          if (!selectedOption) {
+        if (!selectedOption) {
             resultElement.textContent = 'Please select an answer for this question.';
-            resultElement.classList.add('wrong'); // Add wrong class for styling
-            return; // Go to next question
-          }
+            resultElement.classList.add('wrong');
+            return false; // Indicate that no answer was selected
+        }
 
-          const selectedValue = selectedOption.value;
-          const correctAnswer = question.Answer;
+        const selectedValue = selectedOption.value;
+        const correctAnswer = question.Answer;
 
-          if (selectedValue === correctAnswer) {
-            score++;
+        if (selectedValue === correctAnswer) {
             resultElement.textContent = 'Correct! 🎉';
             resultElement.classList.add('correct');
-            // Highlight correct selected answer
             selectedOption.parentElement.style.backgroundColor = '#e6ffe6';
-            selectedOption.parentElement.style.border = '1px solid #27ae60'; /* Green border for correct */
-          } else {
+            selectedOption.parentElement.style.border = '1px solid #27ae60';
+            return true; // Indicate correct answer
+        } else {
             resultElement.textContent = `Wrong! The correct answer was ${correctAnswer}.`;
             resultElement.classList.add('wrong');
-            // Highlight wrong selected answer
             selectedOption.parentElement.style.backgroundColor = '#ffe6e6';
-            selectedOption.parentElement.style.border = '1px solid #e74c3c'; /* Red border for wrong */
+            selectedOption.parentElement.style.border = '1px solid #e74c3c';
+
+            // Display explanation if available
+            if (question.Explanation) {
+                explanationElement.textContent = `Explanation: ${question.Explanation}`;
+                explanationElement.style.display = 'block'; // Show explanation
+            }
 
             // Highlight the actual correct answer if it exists
             const correctLabel = quizForm.querySelector(`input[name="q${index}"][value="${correctAnswer}"]`);
             if (correctLabel) {
-                correctLabel.parentElement.style.backgroundColor = '#d4edda'; /* Slightly darker green for correct answer */
-                correctLabel.parentElement.style.border = '1px solid #27ae60'; /* Green border for correct */
+                correctLabel.parentElement.style.backgroundColor = '#d4edda';
+                correctLabel.parentElement.style.border = '1px solid #27ae60';
             }
-          }
+            return false; // Indicate incorrect answer
+        }
+    }
+
+    /**
+     * Disables all radio buttons and validate/submit buttons.
+     */
+    function disableQuizInputs() {
+        quizForm.querySelectorAll('input[type="radio"]').forEach(input => {
+            input.disabled = true;
+        });
+        quizForm.querySelector('.submit-btn').style.display = 'none'; // Hide submit button
+        quizForm.querySelectorAll('.validate-btn').forEach(btn => {
+            btn.disabled = true;
+            btn.style.opacity = 0.5;
+            btn.style.cursor = 'not-allowed';
+        });
+        document.getElementById('retake-quiz-btn').style.display = 'block'; // Show retake button
+    }
+
+    /**
+     * Enables all radio buttons and validate/submit buttons, clears feedback.
+     */
+    function enableQuizInputs() {
+        quizForm.querySelectorAll('input[type="radio"]').forEach(input => {
+            input.disabled = false;
+            input.checked = false; // Uncheck all
+        });
+        quizForm.querySelector('.submit-btn').style.display = 'block'; // Show submit button
+        quizForm.querySelectorAll('.validate-btn').forEach(btn => {
+            btn.disabled = false;
+            btn.style.opacity = 1;
+            btn.style.cursor = 'pointer';
+        });
+        document.getElementById('retake-quiz-btn').style.display = 'none'; // Hide retake button
+        document.getElementById('score-container').textContent = ''; // Clear score
+        document.getElementById('error-message').textContent = ''; // Clear error message
+
+        // Clear all question specific feedback
+        document.querySelectorAll('.question').forEach(qDiv => {
+            qDiv.querySelector('.result').textContent = '';
+            qDiv.querySelector('.result').className = 'result';
+            qDiv.querySelector('.explanation').textContent = '';
+            qDiv.querySelector('.explanation').style.display = 'none';
+            qDiv.querySelectorAll('label').forEach(label => {
+                label.style.backgroundColor = '';
+                label.style.border = '1px solid #e0e0e0';
+            });
+        });
+    }
+
+
+    // --- Main Quiz Logic ---
+    const questionsContainer = document.getElementById('questions-container');
+    const quizForm = document.getElementById('quiz-form');
+    const scoreContainer = document.getElementById('score-container');
+    const errorMessageDiv = document.getElementById('error-message');
+    let quizQuestions = []; // Store questions globally accessible after fetch
+
+    /**
+     * Loads the quiz questions, shuffles them, and renders the quiz.
+     */
+    function loadQuiz() {
+        enableQuizInputs(); // Reset UI state for a new quiz load
+        questionsContainer.innerHTML = 'Loading questions...'; // Show loading message
+
+        fetch('questions.csv')
+            .then(response => {
+                if (!response.ok) {
+                    let errorMsg = `HTTP error! Status: ${response.status}`;
+                    if (response.status === 404) {
+                        errorMsg += ' - questions.csv not found. Make sure it is in the same directory.';
+                    } else {
+                        errorMsg += ' - Could not load questions.csv.';
+                    }
+                    throw new Error(errorMsg);
+                }
+                return response.text();
+            })
+            .then(csvText => {
+                quizQuestions = parseCSV(csvText);
+                if (quizQuestions.length === 0) {
+                    errorMessageDiv.textContent = 'No questions found in questions.csv or file is empty/malformed. Please check the file content and format (including the Explanation column).';
+                    questionsContainer.innerHTML = '';
+                    quizForm.querySelector('.submit-btn').style.display = 'none';
+                    return;
+                }
+                shuffleArray(quizQuestions); // Shuffle questions for exam prep!
+                questionsContainer.innerHTML = quizQuestions.map(createQuestionElement).join('');
+            })
+            .catch(error => {
+                console.error('Error loading or parsing questions.csv:', error);
+                errorMessageDiv.textContent = `Failed to load quiz questions: ${error.message}`;
+                questionsContainer.innerHTML = '';
+                quizForm.querySelector('.submit-btn').style.display = 'none';
+            });
+    }
+
+
+    document.addEventListener('DOMContentLoaded', () => {
+        loadQuiz(); // Initial load of the quiz
+
+        // Event listener for individual validate buttons (using event delegation)
+        questionsContainer.addEventListener('click', (event) => {
+            if (event.target.classList.contains('validate-btn')) {
+                const index = parseInt(event.target.dataset.questionIndex);
+                validateSingleQuestion(index);
+            }
         });
 
-        // Display final score
-        scoreContainer.textContent = `Your score: ${score} out of ${quizQuestions.length}`;
-      });
+        // Handle form submission (validates all questions and shows final score)
+        quizForm.addEventListener('submit', e => {
+            e.preventDefault(); // Prevent default form submission
+
+            let score = 0;
+            quizQuestions.forEach((question, index) => {
+              // Validate each question and accumulate score
+              const isCorrect = validateSingleQuestion(index);
+              if (isCorrect) {
+                  score++;
+              }
+            });
+
+            // Display final score
+            scoreContainer.textContent = `Your score: ${score} out of ${quizQuestions.length}`;
+            disableQuizInputs(); // Disable inputs after submission
+        });
+
+        // Handle Retake Quiz button click
+        document.getElementById('retake-quiz-btn').addEventListener('click', () => {
+            loadQuiz(); // Reload the quiz
+        });
     });
   </script>
 </body>
