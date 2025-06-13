@@ -96,6 +96,16 @@
         border-radius: 8px;
         display: none; /* Hidden by default, shown when timer is active */
     }
+    #user-id-display {
+        text-align: center;
+        font-size: 0.9em;
+        margin-top: 15px;
+        padding: 8px;
+        background-color: #f0f4f7;
+        border-radius: 5px;
+        color: #555;
+        word-break: break-all; /* Ensure long IDs wrap */
+    }
     .question {
       border-bottom: 1px solid #eee;
       margin-bottom: 20px;
@@ -266,6 +276,82 @@
     }
   </style>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+  <!-- Firebase SDK Imports -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    // FIX: Import signInWithCustomToken explicitly
+    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    // FIX: Import Firestore functions and expose them to window for the second script block
+    import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    // Global Firebase variables (to be used by the main script)
+    window.firebaseApp = null;
+    window.db = null;
+    window.auth = null;
+    window.currentUserId = null;
+    window.isFirebaseReady = false; // Flag to indicate Firebase is initialized and authenticated
+
+    // Expose Firestore functions globally
+    window.doc = doc;
+    window.getDoc = getDoc;
+    window.setDoc = setDoc;
+    window.updateDoc = updateDoc;
+    window.collection = collection;
+    window.deleteDoc = deleteDoc;
+
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        // MANDATORY: Use __app_id and __firebase_config provided by the Canvas environment
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+
+        if (Object.keys(firebaseConfig).length === 0) {
+            document.getElementById('error-message').textContent = 'Firebase configuration missing. Please ensure your Canvas environment provides __firebase_config.';
+            console.error('Firebase configuration not found.');
+            return;
+        }
+
+        // Initialize Firebase
+        window.firebaseApp = initializeApp(firebaseConfig);
+        window.db = getFirestore(window.firebaseApp);
+        window.auth = getAuth(window.firebaseApp);
+
+        // Sign in anonymously if no auth token is provided or user is not signed in
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+            try {
+                // FIX: signInWithCustomToken is now imported and defined
+                await signInWithCustomToken(window.auth, __initial_auth_token);
+                console.log("Signed in with custom token.");
+            } catch (error) {
+                console.error("Error signing in with custom token:", error);
+                document.getElementById('error-message').textContent = `Authentication error: ${error.message}. Attempting anonymous sign-in...`;
+                await signInAnonymously(window.auth); // Fallback to anonymous
+            }
+        } else {
+            await signInAnonymously(window.auth);
+            console.log("Signed in anonymously.");
+        }
+
+        // Listen for auth state changes
+        onAuthStateChanged(window.auth, (user) => {
+            if (user) {
+                window.currentUserId = user.uid;
+                document.getElementById('user-id-display').textContent = `Your User ID: ${window.currentUserId}`;
+                window.isFirebaseReady = true;
+                console.log("Firebase and user ID ready:", window.currentUserId);
+                // Now that Firebase is ready, load quiz settings and questions
+                // This function is defined in the second script block.
+                window.loadSettingsAndQuiz();
+            } else {
+                window.currentUserId = null;
+                document.getElementById('user-id-display').textContent = 'Not signed in.';
+                window.isFirebaseReady = false;
+                console.log("User signed out.");
+                // Potentially disable quiz if not signed in and data persistence is critical
+            }
+        });
+    });
+  </script>
 </head>
 <body>
   <h1 id="quiz-title-display">Exam Preparation Quiz</h1> <!-- Dynamic title display -->
@@ -287,6 +373,7 @@
     </div>
 
     <div id="timer-display"></div>
+    <div id="user-id-display">Authenticating...</div> <!-- Display User ID -->
 
     <form id="quiz-form">
       <div id="questions-container">Loading questions...</div>
@@ -297,8 +384,24 @@
     <div id="error-message" class="error-message"></div>
   </div>
 
-  <script>
-    /* --- JAVASCRIPT LOGIC --- */
+  <script type="text/javascript">
+    /* --- JAVASCRIPT LOGIC (AFTER FIREBASE INITIALIZATION) --- */
+
+    // Check if Firebase is ready before running the main logic
+    // This function will be called by the Firebase script once authentication is complete
+    window.loadSettingsAndQuiz = async function() {
+        if (!window.isFirebaseReady || !window.db || !window.currentUserId) {
+            console.warn("Firebase not ready yet, deferring quiz load.");
+            document.getElementById('error-message').textContent = 'Waiting for authentication...';
+            return;
+        }
+        document.getElementById('error-message').textContent = ''; // Clear previous auth warning
+
+        // FIX: Ensure loadWronglyAnsweredQuestions and loadSettings are awaited before loadQuiz
+        await loadWronglyAnsweredQuestions(); // Load wrong answers history from Firestore
+        await loadSettings(); // Load user settings from Firestore (needs await)
+        loadQuiz(); // Proceed with quiz questions load
+    };
 
     /**
      * Shuffles an array in place using the Fisher-Yates (Knuth) algorithm.
@@ -544,75 +647,218 @@
     }
 
 
-    // --- Local Storage for Settings and Wrong Answers ---
-    const LS_NUM_QUESTIONS_KEY = 'quizNumQuestions';
-    const LS_ENABLE_TIMER_KEY = 'quizEnableTimer';
-    const LS_TIME_LIMIT_KEY = 'quizTimeLimit';
-    const LS_WRONG_ANSWERS_KEY = 'quizWrongAnswers';
-    const LS_QUIZ_TITLE_KEY = 'quizTitle'; // New key for quiz title
+    // --- Firebase Data Operations ---
+    // Collection for user-specific data
+    function getUserDocRef(userId) {
+        // Use the Canvas provided __app_id for unique collection paths
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        // FIX: Ensured window.doc and window.db are available and used correctly
+        return window.doc(window.db, 'artifacts', appId, 'users', userId, 'quizData', 'userSettings');
+    }
 
     let allQuizQuestions = []; // Stores all questions from CSV
     let currentQuizQuestions = []; // Stores questions for the current round
     let wronglyAnsweredQuestions = new Set(); // Stores QuestionText of wrongly answered questions
 
-    function loadSettings() {
+    // Load settings from Firestore
+    async function loadSettings() {
+        if (!window.isFirebaseReady || !window.db || !window.currentUserId) {
+            console.log("Firebase not ready for loading settings.");
+            // Fallback to local storage if Firebase is not ready
+            loadSettingsFromLocalStorage();
+            return;
+        }
+
+        try {
+            // FIX: Ensure window.getDoc is used correctly
+            const docSnap = await window.getDoc(getUserDocRef(window.currentUserId));
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                numQuestionsInput.value = data.numQuestions || '';
+                enableTimerCheckbox.checked = data.enableTimer || false;
+                timeLimitMinutesInput.value = data.timeLimitMinutes || 10;
+                quizTitleInput.value = data.quizTitle || "General Exam Preparation Quiz";
+
+                quizTitleDisplay.textContent = quizTitleInput.value;
+                document.title = quizTitleInput.value;
+                console.log("Settings loaded from Firestore.");
+            } else {
+                console.log("No settings found in Firestore for this user. Using defaults.");
+                // Load from local storage if no settings in Firestore (e.g., first time using Firestore)
+                loadSettingsFromLocalStorage();
+            }
+        } catch (e) {
+            console.error("Error loading settings from Firestore: ", e);
+            errorMessageDiv.textContent = `Error loading settings: ${e.message}`;
+            // Fallback to local storage on error
+            loadSettingsFromLocalStorage();
+        }
+    }
+
+    // Save settings to Firestore
+    async function saveSettings() {
+        if (!window.isFirebaseReady || !window.db || !window.currentUserId) {
+            console.warn("Firebase not ready for saving settings. Saving to local storage instead.");
+            saveSettingsToLocalStorage();
+            return;
+        }
+
+        const settingsData = {
+            numQuestions: numQuestionsInput.value || 'all',
+            enableTimer: enableTimerCheckbox.checked,
+            timeLimitMinutes: parseInt(timeLimitMinutesInput.value) || 10,
+            quizTitle: quizTitleInput.value || "General Exam Preparation Quiz",
+            lastUpdated: new Date()
+        };
+        try {
+            // FIX: Ensure window.setDoc is used correctly
+            await window.setDoc(getUserDocRef(window.currentUserId), settingsData, { merge: true });
+            console.log("Settings saved to Firestore.");
+        } catch (e) {
+            console.error("Error saving settings to Firestore: ", e);
+            errorMessageDiv.textContent = `Error saving settings: ${e.message}`;
+            saveSettingsToLocalStorage(); // Fallback
+        }
+    }
+
+    // Load wrong answers from Firestore
+    async function loadWronglyAnsweredQuestions() {
+        if (!window.isFirebaseReady || !window.db || !window.currentUserId) {
+            console.log("Firebase not ready for loading wrong answers.");
+            // Fallback to local storage if Firebase is not ready
+            loadWronglyAnsweredQuestionsFromLocalStorage();
+            return;
+        }
+
+        try {
+            // FIX: Ensure window.getDoc is used correctly
+            const docSnap = await window.getDoc(getUserDocRef(window.currentUserId));
+            if (docSnap.exists() && docSnap.data().wronglyAnswered) {
+                wronglyAnsweredQuestions = new Set(JSON.parse(docSnap.data().wronglyAnswered));
+                console.log("Wrong answers loaded from Firestore.");
+            } else {
+                console.log("No wrong answers found in Firestore. Using empty set or local storage.");
+                loadWronglyAnsweredQuestionsFromLocalStorage(); // Fallback
+            }
+        } catch (e) {
+            console.error("Error loading wrong answers from Firestore: ", e);
+            errorMessageDiv.textContent = `Error loading wrong answers: ${e.message}`;
+            loadWronglyAnsweredQuestionsFromLocalStorage(); // Fallback
+        }
+    }
+
+    // Save wrong answers to Firestore
+    async function saveWronglyAnsweredQuestions() {
+        if (!window.isFirebaseReady || !window.db || !window.currentUserId) {
+            console.warn("Firebase not ready for saving wrong answers. Saving to local storage instead.");
+            saveWronglyAnsweredQuestionsToLocalStorage();
+            return;
+        }
+
+        try {
+            // FIX: Ensure window.setDoc is used correctly
+            await window.setDoc(getUserDocRef(window.currentUserId), {
+                wronglyAnswered: JSON.stringify(Array.from(wronglyAnsweredQuestions)),
+                lastUpdated: new Date()
+            }, { merge: true }); // Use merge to avoid overwriting other settings
+            console.log("Wrong answers saved to Firestore.");
+        } catch (e) {
+            console.error("Error saving wrong answers to Firestore: ", e);
+            errorMessageDiv.textContent = `Error saving wrong answers: ${e.message}`;
+            saveWronglyAnsweredQuestionsToLocalStorage(); // Fallback
+        }
+    }
+
+    // Clear wrong answers from Firestore
+    async function clearWrongAnswersHistory() {
+        if (!window.isFirebaseReady || !window.db || !window.currentUserId) {
+            console.warn("Firebase not ready for clearing wrong answers history. Clearing local storage instead.");
+            clearWrongAnswersHistoryLocalStorage();
+            return;
+        }
+
+        wronglyAnsweredQuestions.clear();
+        try {
+            // FIX: Ensure window.updateDoc is used correctly
+            await window.updateDoc(getUserDocRef(window.currentUserId), {
+                wronglyAnswered: JSON.stringify([]) // Store as empty array
+            });
+            console.log("Wrong answers history cleared from Firestore.");
+            errorMessageDiv.textContent = 'Wrong answers history cleared!';
+            setTimeout(() => errorMessageDiv.textContent = '', 3000);
+        } catch (e) {
+            console.error("Error clearing wrong answers history from Firestore: ", e);
+            errorMessageDiv.textContent = `Error clearing history: ${e.message}`;
+            clearWrongAnswersHistoryLocalStorage(); // Fallback
+        }
+    }
+
+    // --- Local Storage Fallback Functions (Existing Logic) ---
+    const LS_NUM_QUESTIONS_KEY = 'quizNumQuestions';
+    const LS_ENABLE_TIMER_KEY = 'quizEnableTimer';
+    const LS_TIME_LIMIT_KEY = 'quizTimeLimit';
+    const LS_WRONG_ANSWERS_KEY = 'quizWrongAnswers';
+    const LS_QUIZ_TITLE_KEY = 'quizTitle';
+
+    function loadSettingsFromLocalStorage() {
         const storedNumQuestions = localStorage.getItem(LS_NUM_QUESTIONS_KEY);
         if (storedNumQuestions) {
             numQuestionsInput.value = storedNumQuestions === 'all' ? '' : storedNumQuestions;
         }
-
         const storedEnableTimer = localStorage.getItem(LS_ENABLE_TIMER_KEY);
         if (storedEnableTimer !== null) {
             enableTimerCheckbox.checked = JSON.parse(storedEnableTimer);
         }
-
         const storedTimeLimit = localStorage.getItem(LS_TIME_LIMIT_KEY);
         if (storedTimeLimit) {
             timeLimitMinutesInput.value = storedTimeLimit;
         }
-
         const storedQuizTitle = localStorage.getItem(LS_QUIZ_TITLE_KEY);
         if (storedQuizTitle) {
             quizTitleInput.value = storedQuizTitle;
             quizTitleDisplay.textContent = storedQuizTitle;
-            document.title = storedQuizTitle; // Update browser tab title
+            document.title = storedQuizTitle;
         } else {
-            // Set default if no stored title
             quizTitleInput.value = "General Exam Preparation Quiz";
             quizTitleDisplay.textContent = "General Exam Preparation Quiz";
             document.title = "Exam Preparation Quiz";
         }
+        console.log("Settings loaded from Local Storage.");
     }
 
-    function saveSettings() {
+    function saveSettingsToLocalStorage() {
         localStorage.setItem(LS_NUM_QUESTIONS_KEY, numQuestionsInput.value || 'all');
         localStorage.setItem(LS_ENABLE_TIMER_KEY, enableTimerCheckbox.checked);
         localStorage.setItem(LS_TIME_LIMIT_KEY, timeLimitMinutesInput.value);
         localStorage.setItem(LS_QUIZ_TITLE_KEY, quizTitleInput.value);
+        console.log("Settings saved to Local Storage.");
     }
 
-    function loadWronglyAnsweredQuestions() {
+    function loadWronglyAnsweredQuestionsFromLocalStorage() {
         const storedWrongAnswers = localStorage.getItem(LS_WRONG_ANSWERS_KEY);
         if (storedWrongAnswers) {
             wronglyAnsweredQuestions = new Set(JSON.parse(storedWrongAnswers));
         } else {
             wronglyAnsweredQuestions = new Set();
         }
+        console.log("Wrong answers loaded from Local Storage.");
     }
 
-    function saveWronglyAnsweredQuestions() {
+    function saveWronglyAnsweredQuestionsToLocalStorage() {
         localStorage.setItem(LS_WRONG_ANSWERS_KEY, JSON.stringify(Array.from(wronglyAnsweredQuestions)));
+        console.log("Wrong answers saved to Local Storage.");
     }
 
-    function clearWrongAnswersHistory() {
+    function clearWrongAnswersHistoryLocalStorage() {
         wronglyAnsweredQuestions.clear();
-        saveWronglyAnsweredQuestions();
-        errorMessageDiv.textContent = 'Wrong answers history cleared!';
-        setTimeout(() => errorMessageDiv.textContent = '', 3000); // Clear message after 3 seconds
+        localStorage.removeItem(LS_WRONG_ANSWERS_KEY);
+        errorMessageDiv.textContent = 'Wrong answers history cleared (Local Storage)!';
+        setTimeout(() => errorMessageDiv.textContent = '', 3000);
+        console.log("Wrong answers history cleared from Local Storage.");
     }
 
 
-    // --- Main Quiz Logic ---
+    // --- DOM Element References ---
     const questionsContainer = document.getElementById('questions-container');
     const quizForm = document.getElementById('quiz-form');
     const scoreContainer = document.getElementById('score-container');
@@ -622,8 +868,8 @@
     const timeLimitMinutesInput = document.getElementById('time-limit-minutes');
     const timerDisplay = document.getElementById('timer-display');
     const clearWrongAnswersBtn = document.getElementById('clear-wrong-answers-btn');
-    const quizTitleInput = document.getElementById('quiz-title-input'); // New input for title
-    const quizTitleDisplay = document.getElementById('quiz-title-display'); // H1 for title
+    const quizTitleInput = document.getElementById('quiz-title-input');
+    const quizTitleDisplay = document.getElementById('quiz-title-display');
 
 
     /**
@@ -632,14 +878,14 @@
     function loadQuiz() {
         enableQuizInputs(); // Reset UI state for a new quiz load
         questionsContainer.innerHTML = 'Loading questions...'; // Show loading message
-        loadWronglyAnsweredQuestions(); // Load wrong answers history
 
+        console.log("Attempting to fetch questions.csv from:", window.location.href + 'questions.csv'); // Debugging
         fetch('questions.csv')
             .then(response => {
                 if (!response.ok) {
                     let errorMsg = `HTTP error! Status: ${response.status}`;
                     if (response.status === 404) {
-                        errorMsg += ' - questions.csv not found. Make sure it is in the same directory.';
+                        errorMsg += ' - questions.csv not found. Make sure it is in the same directory as index.html.';
                     } else {
                         errorMsg += ' - Could not load questions.csv.';
                     }
@@ -703,10 +949,10 @@
     }
 
 
+    // Use a global load function for Firebase's DOMContentLoaded listener to call
+    // This ensures Firebase is initialized and authenticated before trying to load quiz data.
+    // The original DOMContentLoaded listener now only sets up event handlers for UI.
     document.addEventListener('DOMContentLoaded', () => {
-        loadSettings(); // Load user settings first
-        loadQuiz(); // Initial load of the quiz
-
         // Event listener for individual validate buttons (using event delegation)
         questionsContainer.addEventListener('click', (event) => {
             if (event.target.classList.contains('validate-btn')) {
@@ -731,7 +977,7 @@
             // Display final score
             scoreContainer.textContent = `Your score: ${score} out of ${currentQuizQuestions.length}`;
             disableQuizInputs(); // Disable inputs after submission
-            saveSettings(); // Save current settings
+            saveSettings(); // Save current settings to Firestore
         });
 
         // Handle Retake Quiz button click
