@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Exam Preparation Quiz</title>
   <style>
-    /* ... (same CSS as previous working version, omitted for brevity) ... */
     body {
       font-family: 'Inter', Arial, sans-serif;
       margin: 20px;
@@ -274,25 +273,30 @@
     }
   </style>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+  <!-- Firebase SDK Imports -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
     import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
     window.firebaseApp = null;
     window.db = null;
     window.auth = null;
     window.currentUserId = null;
     window.isFirebaseReady = false;
+
     window.doc = doc;
     window.getDoc = getDoc;
     window.setDoc = setDoc;
     window.updateDoc = updateDoc;
     window.collection = collection;
     window.deleteDoc = deleteDoc;
+
     function getUserDocRef(userId) {
       const appId = firebaseConfig.projectId;
       return window.doc(window.db, 'artifacts', appId, 'users', userId, 'quizData', 'userSettings');
     }
+
     document.addEventListener('DOMContentLoaded', async () => {
       const firebaseConfig = {
         apiKey: "AIzaSyCmlSLhRNeOrEG4aT9t-JK20QAjzpdELVc",
@@ -307,6 +311,7 @@
       window.firebaseApp = initializeApp(firebaseConfig);
       window.db = getFirestore(window.firebaseApp);
       window.auth = getAuth(window.firebaseApp);
+
       if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
         try {
           await signInWithCustomToken(window.auth, __initial_auth_token);
@@ -317,6 +322,7 @@
       } else {
         await signInAnonymously(window.auth);
       }
+
       onAuthStateChanged(window.auth, (user) => {
         if (user) {
           window.currentUserId = user.uid;
@@ -349,6 +355,7 @@
         <input type="number" id="time-limit-minutes" min="1" value="10">
         <br><br>
         <button type="button" id="clear-wrong-answers-btn">Clear Wrong Answers History</button>
+        <button type="button" id="toggle-quiz-mode-btn">Retake Only Wrong/Unanswered</button>
     </div>
     <div id="timer-display"></div>
     <div id="user-id-display">Authenticating...</div>
@@ -361,8 +368,9 @@
     <div id="error-message" class="error-message"></div>
   </div>
   <script type="text/javascript">
-    // Minimal example Firestore save/load logic
+    // --- Firestore save/load logic for wronglyAnsweredQuestions ---
     let wronglyAnsweredQuestions = new Set();
+
     window.loadSettingsAndQuiz = async function() {
       if (!window.isFirebaseReady || !window.db || !window.currentUserId) {
         document.getElementById('error-message').textContent = 'Waiting for authentication...';
@@ -371,11 +379,9 @@
       document.getElementById('error-message').textContent = '';
       await loadWronglyAnsweredQuestions();
       // ... call loadSettings and loadQuiz as in your working version ...
+      // You can paste in your original quiz logic here
     };
-    function getUserDocRef(userId) {
-      const appId = window.firebaseConfig.projectId;
-      return window.doc(window.db, 'artifacts', appId, 'users', userId, 'quizData', 'userSettings');
-    }
+
     async function loadWronglyAnsweredQuestions() {
       if (!window.isFirebaseReady || !window.db || !window.currentUserId) return;
       try {
@@ -389,6 +395,7 @@
         wronglyAnsweredQuestions = new Set();
       }
     }
+
     async function saveWronglyAnsweredQuestions() {
       if (!window.isFirebaseReady || !window.db || !window.currentUserId) return;
       try {
@@ -398,7 +405,9 @@
         }, { merge: true });
       } catch (e) {}
     }
+
     // Insert your remaining quiz logic here, calling saveWronglyAnsweredQuestions() after updates.
+    // Paste your original question rendering, validation, timer, and event handler code here.
   </script>
 </body>
 </html>
