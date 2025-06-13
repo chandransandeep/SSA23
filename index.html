@@ -1001,7 +1001,7 @@
         });
 
         // Handle form submission (validates all questions and shows final score)
-        quizForm.addEventListener('submit', e => {
+        quizForm.addEventListener('submit', async e => {
             e.preventDefault(); // Prevent default form submission
 
             let score = 0;
