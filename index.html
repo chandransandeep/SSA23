@@ -455,27 +455,12 @@
         if (errorEl) errorEl.textContent = '';
         
         try {
-            // Check if the required functions exist before calling them
-            if (typeof window.loadWronglyAnsweredQuestions === 'function' &&
-                typeof window.loadSettings === 'function' &&
-                typeof window.loadQuizStats === 'function' &&
-                typeof window.loadQuiz === 'function') {
-                
-                await Promise.all([
-                    window.loadWronglyAnsweredQuestions(),
-                    window.loadSettings(),
-                    window.loadQuizStats()
-                ]);
-                window.loadQuiz();
-            } else {
-                console.warn("⚠️ Some required functions not yet loaded. Retrying...");
-                // Retry after a short delay to allow other functions to load
-                setTimeout(() => {
-                    if (typeof window.loadSettingsAndQuiz === 'function') {
-                        window.loadSettingsAndQuiz();
-                    }
-                }, 500);
-            }
+            await Promise.all([
+                window.loadWronglyAnsweredQuestions(),
+                window.loadSettings(),
+                window.loadQuizStats()
+            ]);
+            window.loadQuiz();
         } catch (error) {
             console.error("❌ Error loading quiz data:", error);
             if (errorEl) errorEl.textContent = `Error loading quiz: ${error.message}`;
@@ -626,8 +611,13 @@
   </div>
 
   <script type="text/javascript">
-    // Enhanced JavaScript with improved functionality
-    
+    // Global variables
+    let allQuizQuestions = [];
+    let currentQuizQuestions = [];
+    let wronglyAnsweredQuestions = new Set();
+    let quizForm = null;
+    let timerInterval = null;
+
     // Enhanced shuffle function with better randomization
     function shuffleArray(array) {
         const shuffled = [...array];
@@ -707,8 +697,7 @@
 
     // Enhanced validation with better feedback
     function validateSingleQuestion(index) {
-        const question = window.currentQuizQuestions[index];
-        const quizForm = document.getElementById('quiz-form');
+        const question = currentQuizQuestions[index];
         const selectedOption = quizForm.querySelector(`input[name="q${index}"]:checked`);
         const resultElement = document.getElementById(`result-q${index}`);
         const explanationElement = document.getElementById(`explanation-q${index}`);
@@ -742,15 +731,9 @@
             selectedOption.parentElement.style.border = '2px solid #27ae60';
             selectedOption.parentElement.style.transform = 'scale(1.02)';
             
-            if (window.wronglyAnsweredQuestions) {
-                window.wronglyAnsweredQuestions.delete(question.QuestionText);
-                if (typeof window.saveWronglyAnsweredQuestions === 'function') {
-                    window.saveWronglyAnsweredQuestions();
-                }
-            }
-            if (typeof window.updateProgress === 'function') {
-                window.updateProgress();
-            }
+            wronglyAnsweredQuestions.delete(question.QuestionText);
+            saveWronglyAnsweredQuestions();
+            updateProgress();
             return true;
         } else {
             resultElement.textContent = `❌ Incorrect. The correct answer is ${correctAnswer}.`;
@@ -758,12 +741,8 @@
             selectedOption.parentElement.style.background = 'linear-gradient(135deg, #fdf2f2 0%, #fed7d7 100%)';
             selectedOption.parentElement.style.border = '2px solid #e74c3c';
 
-            if (window.wronglyAnsweredQuestions) {
-                window.wronglyAnsweredQuestions.add(question.QuestionText);
-                if (typeof window.saveWronglyAnsweredQuestions === 'function') {
-                    window.saveWronglyAnsweredQuestions();
-                }
-            }
+            wronglyAnsweredQuestions.add(question.QuestionText);
+            saveWronglyAnsweredQuestions();
 
             if (question.Explanation) {
                 explanationElement.textContent = `💡 Explanation: ${question.Explanation}`;
@@ -777,17 +756,14 @@
                 correctLabel.parentElement.style.border = '2px solid #27ae60';
             }
             
-            if (typeof window.updateProgress === 'function') {
-                window.updateProgress();
-            }
+            updateProgress();
             return false;
         }
     }
 
     // Progress tracking
     function updateProgress() {
-        const quizForm = document.getElementById('quiz-form');
-        const totalQuestions = window.currentQuizQuestions ? window.currentQuizQuestions.length : 0;
+        const totalQuestions = currentQuizQuestions.length;
         const answeredQuestions = quizForm.querySelectorAll('input[type="radio"]:checked').length;
         const progressPercentage = totalQuestions > 0 ? (answeredQuestions / totalQuestions) * 100 : 0;
         
@@ -799,9 +775,7 @@
             progressFill.style.width = `${progressPercentage}%`;
         }
         
-        if (typeof window.updateQuizStats === 'function') {
-            window.updateQuizStats();
-        }
+        updateQuizStats();
     }
 
     // Enhanced quiz statistics
@@ -812,8 +786,8 @@
         const completionRateEl = document.getElementById('completion-rate-stat');
         
         try {
-            const totalQuestions = window.allQuizQuestions ? window.allQuizQuestions.length : 0;
-            const wrongAnswersCount = window.wronglyAnsweredQuestions ? window.wronglyAnsweredQuestions.size : 0;
+            const totalQuestions = allQuizQuestions.length;
+            const wrongAnswersCount = wronglyAnsweredQuestions.size;
             const completionRate = totalQuestions > 0 ? Math.round(((totalQuestions - wrongAnswersCount) / totalQuestions) * 100) : 0;
             
             totalQuestionsEl.textContent = totalQuestions;
@@ -828,51 +802,214 @@
         }
     }
 
-    // Expose functions globally for the loadSettingsAndQuiz function
-    window.loadWronglyAnsweredQuestions = async function() {
-        // Placeholder - implement your wrongly answered questions loading logic
-        if (!window.wronglyAnsweredQuestions) {
-            window.wronglyAnsweredQuestions = new Set();
+    function updateQuizStats() {
+        loadQuizStats(); // Just call the load function to update
+    }
+
+    // Load CSV data function
+    async function loadCSVData() {
+        try {
+            // Try to load from a CSV file (you'll need to upload this to your repository)
+            const response = await fetch('./questions.csv');
+            if (!response.ok) {
+                // If CSV file doesn't exist, use sample data
+                console.log("📝 CSV file not found, using sample questions");
+                return getSampleQuestions();
+            }
+            const csvText = await response.text();
+            return parseCSV(csvText);
+        } catch (error) {
+            console.warn("⚠️ Failed to load CSV file, using sample questions:", error);
+            return getSampleQuestions();
         }
-        console.log("📝 Loading wrongly answered questions...");
-    };
+    }
 
-    window.loadSettings = async function() {
-        // Placeholder - implement your settings loading logic
-        console.log("⚙️ Loading settings...");
-    };
+    // Sample questions data (fallback)
+    function getSampleQuestions() {
+        return [
+            {
+                QuestionText: "What is the capital of France?",
+                OptionA: "London",
+                OptionB: "Berlin", 
+                OptionC: "Paris",
+                OptionD: "Madrid",
+                Answer: "C",
+                Explanation: "Paris is the capital and most populous city of France."
+            },
+            {
+                QuestionText: "Which planet is known as the Red Planet?",
+                OptionA: "Venus",
+                OptionB: "Mars",
+                OptionC: "Jupiter", 
+                OptionD: "Saturn",
+                Answer: "B",
+                Explanation: "Mars is called the Red Planet due to iron oxide (rust) on its surface."
+            },
+            {
+                QuestionText: "What is 2 + 2?",
+                OptionA: "3",
+                OptionB: "4",
+                OptionC: "5",
+                OptionD: "6",
+                Answer: "B",
+                Explanation: "Basic arithmetic: 2 + 2 = 4"
+            }
+        ];
+    }
 
-    window.loadQuizStats = loadQuizStats;
-
-    window.loadQuiz = function() {
-        // Placeholder - implement your quiz loading logic
+    // Main quiz loading function
+    async function loadQuiz() {
         console.log("📚 Loading quiz...");
         const questionsContainer = document.getElementById('questions-container');
-        if (questionsContainer) {
-            questionsContainer.innerHTML = '<p>Quiz functionality will be implemented here...</p>';
+        
+        try {
+            // Load questions from CSV or use sample data
+            allQuizQuestions = await loadCSVData();
+            
+            if (allQuizQuestions.length === 0) {
+                questionsContainer.innerHTML = '<p>❌ No questions available. Please upload a CSV file with questions.</p>';
+                return;
+            }
+
+            // Get number of questions setting
+            const numQuestionsInput = document.getElementById('num-questions');
+            const numQuestions = parseInt(numQuestionsInput.value) || allQuizQuestions.length;
+            
+            // Select and shuffle questions
+            currentQuizQuestions = shuffleArray(allQuizQuestions).slice(0, numQuestions);
+            
+            // Generate quiz HTML
+            questionsContainer.innerHTML = currentQuizQuestions
+                .map((question, index) => createQuestionElement(question, index))
+                .join('');
+
+            // Set up event listeners
+            setupEventListeners();
+            
+            // Update stats
+            updateQuizStats();
+            
+            console.log(`✅ Quiz loaded with ${currentQuizQuestions.length} questions`);
+            
+        } catch (error) {
+            console.error("❌ Error loading quiz:", error);
+            questionsContainer.innerHTML = `<p>❌ Error loading quiz: ${error.message}</p>`;
         }
-    };
+    }
 
-    window.saveWronglyAnsweredQuestions = function() {
-        // Placeholder - implement your save logic
-        console.log("💾 Saving wrongly answered questions...");
-    };
+    // Set up event listeners
+    function setupEventListeners() {
+        quizForm = document.getElementById('quiz-form');
+        
+        // Validate buttons
+        document.querySelectorAll('.validate-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const index = parseInt(e.target.dataset.questionIndex);
+                validateSingleQuestion(index);
+            });
+        });
 
-    window.updateQuizStats = function() {
-        // Placeholder - implement your update stats logic
-        console.log("📊 Updating quiz stats...");
-    };
+        // Quiz form submission
+        quizForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            submitQuiz();
+        });
 
+        // Retake quiz button
+        document.getElementById('retake-quiz-btn').addEventListener('click', () => {
+            loadQuiz();
+            document.getElementById('retake-quiz-btn').style.display = 'none';
+            document.querySelector('.submit-btn').style.display = 'block';
+            document.getElementById('score-container').innerHTML = '';
+        });
+
+        // Clear wrong answers button
+        document.getElementById('clear-wrong-answers-btn').addEventListener('click', () => {
+            wronglyAnsweredQuestions.clear();
+            saveWronglyAnsweredQuestions();
+            updateQuizStats();
+        });
+
+        // Progress tracking on radio change
+        quizForm.addEventListener('change', updateProgress);
+    }
+
+    // Submit quiz function
+    function submitQuiz() {
+        let correctCount = 0;
+        const totalQuestions = currentQuizQuestions.length;
+
+        currentQuizQuestions.forEach((question, index) => {
+            const selectedOption = quizForm.querySelector(`input[name="q${index}"]:checked`);
+            if (selectedOption && selectedOption.value === question.Answer) {
+                correctCount++;
+            }
+        });
+
+        const percentage = Math.round((correctCount / totalQuestions) * 100);
+        
+        document.getElementById('score-container').innerHTML = `
+            <h2>🎯 Quiz Results</h2>
+            <p>You scored <strong>${correctCount}/${totalQuestions}</strong> (${percentage}%)</p>
+            <p>${getPerformanceMessage(percentage)}</p>
+        `;
+
+        document.querySelector('.submit-btn').style.display = 'none';
+        document.getElementById('retake-quiz-btn').style.display = 'block';
+
+        // Scroll to results
+        document.getElementById('score-container').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function getPerformanceMessage(percentage) {
+        if (percentage >= 90) return "🌟 Excellent work! You're mastering this topic!";
+        if (percentage >= 80) return "👍 Great job! You have a solid understanding!";
+        if (percentage >= 70) return "👌 Good work! A little more practice will help!";
+        if (percentage >= 60) return "📚 Keep studying! You're making progress!";
+        return "💪 Don't give up! Review the material and try again!";
+    }
+
+    // Firebase-related functions (stubs for now)
+    async function loadWronglyAnsweredQuestions() {
+        if (!window.currentUserId || !window.db) {
+            console.log("📝 Loading wrongly answered questions locally...");
+            const stored = localStorage.getItem('wronglyAnsweredQuestions');
+            if (stored) {
+                wronglyAnsweredQuestions = new Set(JSON.parse(stored));
+            }
+            return;
+        }
+        // Add Firebase loading logic here
+        console.log("📝 Loading wrongly answered questions from Firebase...");
+    }
+
+    async function loadSettings() {
+        console.log("⚙️ Loading settings...");
+        // Add settings loading logic here
+    }
+
+    function saveWronglyAnsweredQuestions() {
+        localStorage.setItem('wronglyAnsweredQuestions', JSON.stringify([...wronglyAnsweredQuestions]));
+        console.log("💾 Saved wrongly answered questions");
+    }
+
+    // Expose functions globally
+    window.loadWronglyAnsweredQuestions = loadWronglyAnsweredQuestions;
+    window.loadSettings = loadSettings;
+    window.loadQuizStats = loadQuizStats;
+    window.loadQuiz = loadQuiz;
+    window.saveWronglyAnsweredQuestions = saveWronglyAnsweredQuestions;
+    window.updateQuizStats = updateQuizStats;
     window.updateProgress = updateProgress;
     window.validateSingleQuestion = validateSingleQuestion;
     window.createQuestionElement = createQuestionElement;
     window.parseCSV = parseCSV;
     window.shuffleArray = shuffleArray;
 
-    // Initialize some global variables
-    window.currentQuizQuestions = [];
-    window.allQuizQuestions = [];
-    window.wronglyAnsweredQuestions = new Set();
+    // Initialize global variables for backward compatibility
+    window.currentQuizQuestions = currentQuizQuestions;
+    window.allQuizQuestions = allQuizQuestions;
+    window.wronglyAnsweredQuestions = wronglyAnsweredQuestions;
 
     console.log("✅ All functions loaded and ready");
   </script>
