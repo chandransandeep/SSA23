@@ -2,110 +2,328 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PEGACPSA23V1 Exam Quiz</title>
   <style>
+    /* --- CSS STYLES --- */
     body {
       font-family: Arial, sans-serif;
       margin: 20px;
       max-width: 800px;
+      line-height: 1.6;
+      color: #333;
+      background-color: #f4f7f6;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      box-sizing: border-box;
+    }
+    h1 {
+      color: #2c3e50;
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 2.2em;
+    }
+    .quiz-container {
+      background-color: #ffffff;
+      border: 1px solid #ddd;
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      width: 100%;
+      max-width: 700px;
+      box-sizing: border-box;
     }
     .question {
-      border-bottom: 1px solid #ccc;
-      margin-bottom: 15px;
-      padding-bottom: 10px;
+      border-bottom: 1px solid #eee;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+    }
+    .question:last-of-type {
+      border-bottom: none;
+      margin-bottom: 0;
+      padding-bottom: 0;
     }
     .question-title {
       font-weight: bold;
-      margin-bottom: 8px;
+      margin-bottom: 12px;
+      font-size: 1.1em;
+      color: #34495e;
     }
     .options label {
-      display: block;
-      margin-bottom: 5px;
+      display: flex; /* Use flexbox for better alignment of radio and text */
+      align-items: center;
+      margin-bottom: 8px;
       cursor: pointer;
+      padding: 10px 15px;
+      border-radius: 6px;
+      transition: background-color 0.2s ease, transform 0.1s ease;
+      border: 1px solid #e0e0e0; /* Add a subtle border to options */
+    }
+    .options label:hover {
+      background-color: #f5f8ff; /* Lighter hover */
+      transform: translateY(-2px); /* Slight lift on hover */
+    }
+    .options input[type="radio"] {
+      margin-right: 12px;
+      transform: scale(1.2); /* Slightly larger radio buttons */
     }
     .submit-btn {
-      margin-top: 20px;
-      padding: 10px 15px;
-      font-size: 16px;
+      display: block;
+      width: 100%;
+      padding: 15px 20px;
+      font-size: 1.2em;
+      background-color: #3498db;
+      color: white;
+      border: none;
+      border-radius: 8px;
       cursor: pointer;
+      margin-top: 30px;
+      transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease;
+      box-shadow: 0 4px 10px rgba(52, 152, 219, 0.3);
+    }
+    .submit-btn:hover {
+      background-color: #2980b9;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 15px rgba(41, 128, 185, 0.4);
     }
     .result {
       margin-top: 10px;
       font-weight: bold;
+      padding: 8px 15px;
+      border-radius: 6px;
+      text-align: center;
+      font-size: 0.95em;
     }
     .correct {
-      color: green;
+      color: #27ae60;
+      background-color: #e6ffe6;
+      border: 1px solid #a8e6a8;
     }
     .wrong {
-      color: red;
+      color: #e74c3c;
+      background-color: #ffe6e6;
+      border: 1px solid #f0a8a8;
+    }
+    .score-container {
+      margin-top: 40px;
+      padding: 20px;
+      background-color: #ecf0f1;
+      border-radius: 10px;
+      text-align: center;
+      font-size: 1.3em;
+      font-weight: bold;
+      color: #2c3e50;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    }
+    .error-message {
+        color: #c0392b;
+        font-weight: bold;
+        text-align: center;
+        margin-top: 20px;
+        padding: 15px;
+        background-color: #fbecec;
+        border: 1px solid #e74c3c;
+        border-radius: 8px;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 600px) {
+        body {
+            margin: 10px;
+        }
+        h1 {
+            font-size: 1.8em;
+            margin-bottom: 20px;
+        }
+        .quiz-container {
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .submit-btn {
+            font-size: 1.1em;
+            padding: 12px 15px;
+        }
+        .score-container {
+            font-size: 1.1em;
+            padding: 15px;
+        }
+        .options label {
+            padding: 8px 10px;
+        }
     }
   </style>
 </head>
 <body>
   <h1>PEGACPSA23V1 Exam Quiz</h1>
-  <form id="quiz-form">
-    <div id="questions-container">Loading questions...</div>
-    <button type="submit" class="submit-btn">Submit Answers</button>
-  </form>
-  <div id="score-container"></div>
+  <div class="quiz-container">
+    <form id="quiz-form">
+      <div id="questions-container">Loading questions...</div>
+      <button type="submit" class="submit-btn">Submit Answers</button>
+    </form>
+    <div id="score-container" class="score-container"></div>
+    <div id="error-message" class="error-message"></div>
+  </div>
 
   <script>
+    /* --- JAVASCRIPT LOGIC --- */
+
+    /**
+     * Parses CSV text into an array of objects.
+     * Assumes the first line is headers and handles quoted fields with commas.
+     * @param {string} text - The CSV string.
+     * @returns {Array<Object>} An array of objects, each representing a row.
+     */
     function parseCSV(text) {
-      const lines = text.trim().split('\\n');
-      const headers = lines[0].split(',');
+      const lines = text.trim().split('\n');
+      if (lines.length === 0) {
+        return [];
+      }
+
+      const headers = lines[0].split(',').map(header => header.trim());
       return lines.slice(1).map(line => {
-        const values = line.split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/).map(v => v.replace(/^"|"$/g, ''));
-        return headers.reduce((obj, h, i) => (obj[h] = values[i], obj), {});
-      });
+        // Use a regex to split by comma, but not if inside double quotes
+        const values = line.split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/).map(v => v.replace(/^"|"$/g, '').trim());
+
+        if (values.length !== headers.length) {
+            console.warn(`Skipping malformed row: "${line}" - Mismatched columns. Line: "${line}"`);
+            return null; // Skip this row
+        }
+
+        return headers.reduce((obj, h, i) => {
+          obj[h] = values[i];
+          return obj;
+        }, {});
+      }).filter(row => row !== null); // Filter out any null rows (malformed)
     }
 
-    function createQuestionElement(q, index) {
+    /**
+     * Generates the HTML for a single quiz question.
+     * @param {Object} question - The question object from the CSV data.
+     * @param {number} index - The index of the question.
+     * @returns {string} The HTML string for the question.
+     */
+    function createQuestionElement(question, index) {
+      // Ensure all options are available, default to empty string if missing
+      const options = {
+        A: question.OptionA || '',
+        B: question.OptionB || '',
+        C: question.OptionC || '',
+        D: question.OptionD || ''
+      };
+
       return `
-        <div class="question">
-          <div class="question-title">${index + 1}. ${q.QuestionText}</div>
+        <div class="question" data-question-index="${index}">
+          <div class="question-title">${index + 1}. ${question.QuestionText || 'No Question Text'}</div>
           <div class="options">
-            <label><input type="radio" name="q${index}" value="A" /> A. ${q.OptionA}</label>
-            <label><input type="radio" name="q${index}" value="B" /> B. ${q.OptionB}</label>
-            <label><input type="radio" name="q${index}" value="C" /> C. ${q.OptionC}</label>
-            <label><input type="radio" name="q${index}" value="D" /> D. ${q.OptionD}</label>
+            ${Object.entries(options).map(([key, value]) => `
+              <label>
+                <input type="radio" name="q${index}" value="${key}" /> ${key}. ${value}
+              </label>
+            `).join('')}
           </div>
           <div class="result" id="result-q${index}"></div>
         </div>
       `;
     }
 
-    fetch('questions.csv')
-      .then(res => res.text())
-      .then(csv => {
-        const questions = parseCSV(csv);
-        const container = document.getElementById('questions-container');
-        container.innerHTML = questions.map(createQuestionElement).join('');
+    // --- Main Quiz Logic ---
+    document.addEventListener('DOMContentLoaded', () => {
+      const questionsContainer = document.getElementById('questions-container');
+      const quizForm = document.getElementById('quiz-form');
+      const scoreContainer = document.getElementById('score-container');
+      const errorMessageDiv = document.getElementById('error-message');
+      let quizQuestions = []; // Store questions globally accessible after fetch
 
-        const form = document.getElementById('quiz-form');
-        form.addEventListener('submit', e => {
-          e.preventDefault();
-          let score = 0;
-          questions.forEach((q, i) => {
-            const selected = form.querySelector(`input[name="q${i}"]:checked`);
-            const resultEl = document.getElementById(`result-q${i}`);
-            if (!selected) {
-              resultEl.textContent = 'No answer selected.';
-              resultEl.className = 'result wrong';
-              return;
-            }
-            if (selected.value === q.Answer) {
-              score++;
-              resultEl.textContent = 'Correct!';
-              resultEl.className = 'result correct';
+      // Fetch questions from CSV
+      fetch('questions.csv')
+        .then(response => {
+          if (!response.ok) {
+            // Check for common client-side network errors or 404s
+            let errorMsg = `HTTP error! Status: ${response.status}`;
+            if (response.status === 404) {
+                errorMsg += ' - questions.csv not found. Make sure it is in the same directory.';
             } else {
-              resultEl.textContent = `Wrong! Correct answer: ${q.Answer}`;
-              resultEl.className = 'result wrong';
+                errorMsg += ' - Could not load questions.csv.';
             }
-          });
-          const scoreContainer = document.getElementById('score-container');
-          scoreContainer.textContent = `Your score: ${score} / ${questions.length}`;
+            throw new Error(errorMsg);
+          }
+          return response.text();
+        })
+        .then(csvText => {
+          quizQuestions = parseCSV(csvText);
+          if (quizQuestions.length === 0) {
+            errorMessageDiv.textContent = 'No questions found in questions.csv or file is empty/malformed. Please check the file content.';
+            questionsContainer.innerHTML = ''; // Clear "Loading questions..."
+            quizForm.querySelector('.submit-btn').style.display = 'none'; // Hide submit button
+            return;
+          }
+          questionsContainer.innerHTML = quizQuestions.map(createQuestionElement).join('');
+        })
+        .catch(error => {
+          console.error('Error loading or parsing questions.csv:', error);
+          errorMessageDiv.textContent = `Failed to load quiz questions: ${error.message}`;
+          questionsContainer.innerHTML = ''; // Clear "Loading questions..."
+          quizForm.querySelector('.submit-btn').style.display = 'none'; // Hide submit button
         });
+
+      // Handle form submission
+      quizForm.addEventListener('submit', e => {
+        e.preventDefault(); // Prevent default form submission
+
+        let score = 0;
+        quizQuestions.forEach((question, index) => {
+          const selectedOption = quizForm.querySelector(`input[name="q${index}"]:checked`);
+          const resultElement = document.getElementById(`result-q${index}`);
+          const questionDiv = document.querySelector(`.question[data-question-index="${index}"]`);
+
+          // Clear previous feedback styles
+          resultElement.textContent = '';
+          resultElement.className = 'result'; // Reset classes for result message
+
+          // Remove previous highlight from options for this question
+          questionDiv.querySelectorAll('label').forEach(label => {
+              label.style.backgroundColor = ''; // Clear background
+              label.style.border = '1px solid #e0e0e0'; // Reset border
+          });
+
+          if (!selectedOption) {
+            resultElement.textContent = 'Please select an answer for this question.';
+            resultElement.classList.add('wrong'); // Add wrong class for styling
+            return; // Go to next question
+          }
+
+          const selectedValue = selectedOption.value;
+          const correctAnswer = question.Answer;
+
+          if (selectedValue === correctAnswer) {
+            score++;
+            resultElement.textContent = 'Correct! 🎉';
+            resultElement.classList.add('correct');
+            // Highlight correct selected answer
+            selectedOption.parentElement.style.backgroundColor = '#e6ffe6';
+            selectedOption.parentElement.style.border = '1px solid #27ae60'; /* Green border for correct */
+          } else {
+            resultElement.textContent = `Wrong! The correct answer was ${correctAnswer}.`;
+            resultElement.classList.add('wrong');
+            // Highlight wrong selected answer
+            selectedOption.parentElement.style.backgroundColor = '#ffe6e6';
+            selectedOption.parentElement.style.border = '1px solid #e74c3c'; /* Red border for wrong */
+
+            // Highlight the actual correct answer if it exists
+            const correctLabel = quizForm.querySelector(`input[name="q${index}"][value="${correctAnswer}"]`);
+            if (correctLabel) {
+                correctLabel.parentElement.style.backgroundColor = '#d4edda'; /* Slightly darker green for correct answer */
+                correctLabel.parentElement.style.border = '1px solid #27ae60'; /* Green border for correct */
+            }
+          }
+        });
+
+        // Display final score
+        scoreContainer.textContent = `Your score: ${score} out of ${quizQuestions.length}`;
       });
+    });
   </script>
 </body>
 </html>
