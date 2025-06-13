@@ -442,6 +442,46 @@
     window.collection = collection;
     window.deleteDoc = deleteDoc;
 
+    // Define loadSettingsAndQuiz function BEFORE it's called
+    window.loadSettingsAndQuiz = async function() {
+        if (!window.isFirebaseReady || !window.db || !window.currentUserId) {
+            console.warn("⚠️ Firebase not ready yet, deferring quiz load.");
+            const errorEl = document.getElementById('error-message');
+            if (errorEl) errorEl.textContent = 'Waiting for authentication...';
+            return;
+        }
+        
+        const errorEl = document.getElementById('error-message');
+        if (errorEl) errorEl.textContent = '';
+        
+        try {
+            // Check if the required functions exist before calling them
+            if (typeof window.loadWronglyAnsweredQuestions === 'function' &&
+                typeof window.loadSettings === 'function' &&
+                typeof window.loadQuizStats === 'function' &&
+                typeof window.loadQuiz === 'function') {
+                
+                await Promise.all([
+                    window.loadWronglyAnsweredQuestions(),
+                    window.loadSettings(),
+                    window.loadQuizStats()
+                ]);
+                window.loadQuiz();
+            } else {
+                console.warn("⚠️ Some required functions not yet loaded. Retrying...");
+                // Retry after a short delay to allow other functions to load
+                setTimeout(() => {
+                    if (typeof window.loadSettingsAndQuiz === 'function') {
+                        window.loadSettingsAndQuiz();
+                    }
+                }, 500);
+            }
+        } catch (error) {
+            console.error("❌ Error loading quiz data:", error);
+            if (errorEl) errorEl.textContent = `Error loading quiz: ${error.message}`;
+        }
+    };
+
     document.addEventListener('DOMContentLoaded', async () => {
         // Firebase configuration
         const firebaseConfig = {
@@ -479,10 +519,12 @@
                     console.error(`❌ Authentication attempt ${authAttempts} failed:`, error);
                     
                     if (authAttempts < maxAuthAttempts) {
-                        document.getElementById('error-message').textContent = `Authentication failed (attempt ${authAttempts}/${maxAuthAttempts}). Retrying...`;
+                        const errorEl = document.getElementById('error-message');
+                        if (errorEl) errorEl.textContent = `Authentication failed (attempt ${authAttempts}/${maxAuthAttempts}). Retrying...`;
                         setTimeout(attemptAuth, 2000);
                     } else {
-                        document.getElementById('error-message').textContent = `Authentication failed after ${maxAuthAttempts} attempts. Please refresh the page.`;
+                        const errorEl = document.getElementById('error-message');
+                        if (errorEl) errorEl.textContent = `Authentication failed after ${maxAuthAttempts} attempts. Please refresh the page.`;
                     }
                 }
             };
@@ -493,21 +535,26 @@
             onAuthStateChanged(window.auth, (user) => {
                 if (user) {
                     window.currentUserId = user.uid;
-                    document.getElementById('user-id-display').innerHTML = `
-                        <strong>User ID:</strong> ${window.currentUserId.substring(0, 8)}...
-                    `;
+                    const userDisplayEl = document.getElementById('user-id-display');
+                    if (userDisplayEl) {
+                        userDisplayEl.innerHTML = `
+                            <strong>User ID:</strong> ${window.currentUserId.substring(0, 8)}...
+                        `;
+                    }
                     window.isFirebaseReady = true;
                     console.log("🔥 Firebase ready with user:", window.currentUserId);
                     window.loadSettingsAndQuiz();
                 } else {
                     window.currentUserId = null;
-                    document.getElementById('user-id-display').textContent = '❌ Not authenticated';
+                    const userDisplayEl = document.getElementById('user-id-display');
+                    if (userDisplayEl) userDisplayEl.textContent = '❌ Not authenticated';
                     window.isFirebaseReady = false;
                 }
             });
         } catch (error) {
             console.error("❌ Firebase initialization failed:", error);
-            document.getElementById('error-message').textContent = `Firebase initialization failed: ${error.message}`;
+            const errorEl = document.getElementById('error-message');
+            if (errorEl) errorEl.textContent = `Firebase initialization failed: ${error.message}`;
         }
     });
   </script>
@@ -581,28 +628,6 @@
   <script type="text/javascript">
     // Enhanced JavaScript with improved functionality
     
-    window.loadSettingsAndQuiz = async function() {
-        if (!window.isFirebaseReady || !window.db || !window.currentUserId) {
-            console.warn("⚠️ Firebase not ready yet, deferring quiz load.");
-            document.getElementById('error-message').textContent = 'Waiting for authentication...';
-            return;
-        }
-        
-        document.getElementById('error-message').textContent = '';
-        
-        try {
-            await Promise.all([
-                loadWronglyAnsweredQuestions(),
-                loadSettings(),
-                loadQuizStats()
-            ]);
-            loadQuiz();
-        } catch (error) {
-            console.error("❌ Error loading quiz data:", error);
-            document.getElementById('error-message').textContent = `Error loading quiz: ${error.message}`;
-        }
-    };
-
     // Enhanced shuffle function with better randomization
     function shuffleArray(array) {
         const shuffled = [...array];
@@ -682,7 +707,8 @@
 
     // Enhanced validation with better feedback
     function validateSingleQuestion(index) {
-        const question = currentQuizQuestions[index];
+        const question = window.currentQuizQuestions[index];
+        const quizForm = document.getElementById('quiz-form');
         const selectedOption = quizForm.querySelector(`input[name="q${index}"]:checked`);
         const resultElement = document.getElementById(`result-q${index}`);
         const explanationElement = document.getElementById(`explanation-q${index}`);
@@ -716,9 +742,15 @@
             selectedOption.parentElement.style.border = '2px solid #27ae60';
             selectedOption.parentElement.style.transform = 'scale(1.02)';
             
-            wronglyAnsweredQuestions.delete(question.QuestionText);
-            saveWronglyAnsweredQuestions();
-            updateProgress();
+            if (window.wronglyAnsweredQuestions) {
+                window.wronglyAnsweredQuestions.delete(question.QuestionText);
+                if (typeof window.saveWronglyAnsweredQuestions === 'function') {
+                    window.saveWronglyAnsweredQuestions();
+                }
+            }
+            if (typeof window.updateProgress === 'function') {
+                window.updateProgress();
+            }
             return true;
         } else {
             resultElement.textContent = `❌ Incorrect. The correct answer is ${correctAnswer}.`;
@@ -726,8 +758,12 @@
             selectedOption.parentElement.style.background = 'linear-gradient(135deg, #fdf2f2 0%, #fed7d7 100%)';
             selectedOption.parentElement.style.border = '2px solid #e74c3c';
 
-            wronglyAnsweredQuestions.add(question.QuestionText);
-            saveWronglyAnsweredQuestions();
+            if (window.wronglyAnsweredQuestions) {
+                window.wronglyAnsweredQuestions.add(question.QuestionText);
+                if (typeof window.saveWronglyAnsweredQuestions === 'function') {
+                    window.saveWronglyAnsweredQuestions();
+                }
+            }
 
             if (question.Explanation) {
                 explanationElement.textContent = `💡 Explanation: ${question.Explanation}`;
@@ -741,14 +777,17 @@
                 correctLabel.parentElement.style.border = '2px solid #27ae60';
             }
             
-            updateProgress();
+            if (typeof window.updateProgress === 'function') {
+                window.updateProgress();
+            }
             return false;
         }
     }
 
     // Progress tracking
     function updateProgress() {
-        const totalQuestions = currentQuizQuestions.length;
+        const quizForm = document.getElementById('quiz-form');
+        const totalQuestions = window.currentQuizQuestions ? window.currentQuizQuestions.length : 0;
         const answeredQuestions = quizForm.querySelectorAll('input[type="radio"]:checked').length;
         const progressPercentage = totalQuestions > 0 ? (answeredQuestions / totalQuestions) * 100 : 0;
         
@@ -760,7 +799,9 @@
             progressFill.style.width = `${progressPercentage}%`;
         }
         
-        updateQuizStats();
+        if (typeof window.updateQuizStats === 'function') {
+            window.updateQuizStats();
+        }
     }
 
     // Enhanced quiz statistics
@@ -771,8 +812,8 @@
         const completionRateEl = document.getElementById('completion-rate-stat');
         
         try {
-            const totalQuestions = allQuizQuestions.length;
-            const wrongAnswersCount = wronglyAnsweredQuestions.size;
+            const totalQuestions = window.allQuizQuestions ? window.allQuizQuestions.length : 0;
+            const wrongAnswersCount = window.wronglyAnsweredQuestions ? window.wronglyAnsweredQuestions.size : 0;
             const completionRate = totalQuestions > 0 ? Math.round(((totalQuestions - wrongAnswersCount) / totalQuestions) * 100) : 0;
             
             totalQuestionsEl.textContent = totalQuestions;
@@ -780,3 +821,60 @@
             completionRateEl.textContent = `${completionRate}%`;
             
             if (totalQuestions > 0) {
+                statsPanel.style.display = 'grid';
+            }
+        } catch (error) {
+            console.error("❌ Error loading quiz stats:", error);
+        }
+    }
+
+    // Expose functions globally for the loadSettingsAndQuiz function
+    window.loadWronglyAnsweredQuestions = async function() {
+        // Placeholder - implement your wrongly answered questions loading logic
+        if (!window.wronglyAnsweredQuestions) {
+            window.wronglyAnsweredQuestions = new Set();
+        }
+        console.log("📝 Loading wrongly answered questions...");
+    };
+
+    window.loadSettings = async function() {
+        // Placeholder - implement your settings loading logic
+        console.log("⚙️ Loading settings...");
+    };
+
+    window.loadQuizStats = loadQuizStats;
+
+    window.loadQuiz = function() {
+        // Placeholder - implement your quiz loading logic
+        console.log("📚 Loading quiz...");
+        const questionsContainer = document.getElementById('questions-container');
+        if (questionsContainer) {
+            questionsContainer.innerHTML = '<p>Quiz functionality will be implemented here...</p>';
+        }
+    };
+
+    window.saveWronglyAnsweredQuestions = function() {
+        // Placeholder - implement your save logic
+        console.log("💾 Saving wrongly answered questions...");
+    };
+
+    window.updateQuizStats = function() {
+        // Placeholder - implement your update stats logic
+        console.log("📊 Updating quiz stats...");
+    };
+
+    window.updateProgress = updateProgress;
+    window.validateSingleQuestion = validateSingleQuestion;
+    window.createQuestionElement = createQuestionElement;
+    window.parseCSV = parseCSV;
+    window.shuffleArray = shuffleArray;
+
+    // Initialize some global variables
+    window.currentQuizQuestions = [];
+    window.allQuizQuestions = [];
+    window.wronglyAnsweredQuestions = new Set();
+
+    console.log("✅ All functions loaded and ready");
+  </script>
+</body>
+</html>
