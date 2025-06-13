@@ -275,14 +275,14 @@
         }
     }
   </style>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+  <link href="[https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap](https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap)" rel="stylesheet">
   <!-- Firebase SDK Imports -->
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { initializeApp } from "[https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js](https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js)";
     // FIX: Import signInWithCustomToken explicitly
-    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "[https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js](https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js)";
     // FIX: Import Firestore functions and expose them to window for the second script block
-    import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, deleteDoc } from "[https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js](https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js)";
 
     // Global Firebase variables (to be used by the main script)
     window.firebaseApp = null;
@@ -341,6 +341,7 @@
                 console.log("Firebase and user ID ready:", window.currentUserId);
                 // Now that Firebase is ready, load quiz settings and questions
                 // This function is defined in the second script block.
+                // FIX: Call loadSettingsAndQuiz only after isFirebaseReady is true.
                 window.loadSettingsAndQuiz();
             } else {
                 window.currentUserId = null;
@@ -879,8 +880,9 @@
         enableQuizInputs(); // Reset UI state for a new quiz load
         questionsContainer.innerHTML = 'Loading questions...'; // Show loading message
 
-        console.log("Attempting to fetch questions.csv from:", window.location.href + 'questions.csv'); // Debugging
-        fetch('questions.csv')
+        console.log("Attempting to fetch questions.csv from:", new URL('questions.csv', window.location.href).href); // Debugging with absolute URL
+        // FIX: Use URL constructor for more robust path resolution
+        fetch(new URL('questions.csv', window.location.href).href)
             .then(response => {
                 if (!response.ok) {
                     let errorMsg = `HTTP error! Status: ${response.status}`;
