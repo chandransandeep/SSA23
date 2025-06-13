@@ -301,6 +301,7 @@
     document.addEventListener('DOMContentLoaded', async () => {
         // Manually inserted Firebase config for local testing or specific environments
         const firebaseConfig = {
+        window.firebaseConfig = firebaseConfig;
           apiKey: "AIzaSyCmlSLhRNeOrEG4aT9t-JK20QAjzpdELVc",
           authDomain: "studybuddy-58e84.firebaseapp.com",
           projectId: "studybuddy-58e84",
@@ -309,7 +310,6 @@
           appId: "1:143466700741:web:9db108d70302aed8c435ac",
           measurementId: "G-0K69MEBD6Q"
         };
-        window.firebaseConfig = firebaseConfig;
         // For consistency, set appId using projectId for Firestore paths
         const appId = firebaseConfig.projectId; // This will be "studybuddy-58e84"
 
@@ -342,6 +342,7 @@
                 window.isFirebaseReady = true;
                 console.log("Firebase and user ID ready:", window.currentUserId);
                 // Now that Firebase is ready, load quiz settings and questions
+                loadDashboard();
                 // This function is defined in the second script block.
                 window.loadSettingsAndQuiz();
             } else {
@@ -662,6 +663,47 @@
     let currentQuizQuestions = []; // Stores questions for the current round
     let wronglyAnsweredQuestions = new Set(); // Stores QuestionText of wrongly answered questions
 
+    
+    async function loadDashboard() {
+        if (!window.isFirebaseReady || !window.db || !window.currentUserId) return;
+
+        const resultsCol = window.collection(window.db, 'artifacts', window.firebaseConfig.projectId, 'users', window.currentUserId, 'results');
+        const snapshot = await window.getDocs(resultsCol);
+
+        const data = [];
+        snapshot.forEach(doc => {
+            const entry = doc.data();
+            data.push({
+                date: new Date(entry.timestamp).toLocaleDateString(),
+                score: entry.score,
+                total: entry.total,
+            });
+        });
+        renderChart(data);
+    }
+
+    function renderChart(results) {
+        const ctx = document.getElementById('progressChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: results.map(r => r.date),
+                datasets: [{
+                    label: 'Score (%)',
+                    data: results.map(r => (r.score / r.total) * 100),
+                    borderColor: '#3498db',
+                    tension: 0.2,
+                    fill: false
+                }]
+            },
+            options: {
+                scales: {
+                    y: { beginAtZero: true, max: 100 }
+                }
+            }
+        });
+    }
+
     // Load settings from Firestore
     async function loadSettings() {
         if (!window.isFirebaseReady || !window.db || !window.currentUserId) {
@@ -968,6 +1010,18 @@
               const isCorrect = validateSingleQuestion(index); // This will now show correct answer only if wrong
               if (isCorrect) {
                   score++;
+
+        // Save result to Firestore
+        if (window.isFirebaseReady && window.db && window.currentUserId) {
+            const resultRef = window.doc(window.db, 'artifacts', window.firebaseConfig.projectId, 'users', window.currentUserId, 'results', new Date().toISOString());
+            await window.setDoc(resultRef, {
+                score,
+                total: currentQuizQuestions.length,
+                timestamp: new Date().toISOString(),
+            });
+            console.log("Result saved.");
+        }
+
               }
             });
 
