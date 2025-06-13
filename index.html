@@ -1,27 +1,57 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>PEGACPSA23V1 Exam Questions</title>
+  <meta charset="UTF-8" />
+  <title>PEGACPSA23V1 Exam Quiz</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; max-width: 800px; }
-    .question { border-bottom: 1px solid #ccc; margin-bottom: 15px; padding-bottom: 10px; }
-    .question-title { font-weight: bold; cursor: pointer; }
-    .answer { display: none; margin-top: 8px; background: #f9f9f9; padding: 10px; border-left: 4px solid #0078D7; }
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      max-width: 800px;
+    }
+    .question {
+      border-bottom: 1px solid #ccc;
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+    }
+    .question-title {
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+    .options label {
+      display: block;
+      margin-bottom: 5px;
+      cursor: pointer;
+    }
+    .submit-btn {
+      margin-top: 20px;
+      padding: 10px 15px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .result {
+      margin-top: 10px;
+      font-weight: bold;
+    }
+    .correct {
+      color: green;
+    }
+    .wrong {
+      color: red;
+    }
   </style>
 </head>
 <body>
-  <h1>PEGACPSA23V1 Exam Questions</h1>
-  <div id="questions-container">Loading questions...</div>
+  <h1>PEGACPSA23V1 Exam Quiz</h1>
+  <form id="quiz-form">
+    <div id="questions-container">Loading questions...</div>
+    <button type="submit" class="submit-btn">Submit Answers</button>
+  </form>
+  <div id="score-container"></div>
 
   <script>
-    function toggleAnswer(el) {
-      const next = el.nextElementSibling;
-      next.style.display = next.style.display === 'block' ? 'none' : 'block';
-    }
-
     function parseCSV(text) {
-      const lines = text.trim().split('\n');
+      const lines = text.trim().split('\\n');
       const headers = lines[0].split(',');
       return lines.slice(1).map(line => {
         const values = line.split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/).map(v => v.replace(/^"|"$/g, ''));
@@ -29,25 +59,52 @@
       });
     }
 
+    function createQuestionElement(q, index) {
+      return `
+        <div class="question">
+          <div class="question-title">${index + 1}. ${q.QuestionText}</div>
+          <div class="options">
+            <label><input type="radio" name="q${index}" value="A" /> A. ${q.OptionA}</label>
+            <label><input type="radio" name="q${index}" value="B" /> B. ${q.OptionB}</label>
+            <label><input type="radio" name="q${index}" value="C" /> C. ${q.OptionC}</label>
+            <label><input type="radio" name="q${index}" value="D" /> D. ${q.OptionD}</label>
+          </div>
+          <div class="result" id="result-q${index}"></div>
+        </div>
+      `;
+    }
+
     fetch('questions.csv')
       .then(res => res.text())
       .then(csv => {
         const questions = parseCSV(csv);
         const container = document.getElementById('questions-container');
-        container.innerHTML = questions.map(q => `
-          <div class="question">
-            <div class="question-title" onclick="toggleAnswer(this)">
-              ${q.QuestionNumber}. ${q.QuestionText}
-            </div>
-            <div class="answer">
-              A. ${q.OptionA}<br/>
-              B. ${q.OptionB}<br/>
-              C. ${q.OptionC}<br/>
-              D. ${q.OptionD}<br/>
-              <b>Answer:</b> ${q.Answer}
-            </div>
-          </div>
-        `).join('');
+        container.innerHTML = questions.map(createQuestionElement).join('');
+
+        const form = document.getElementById('quiz-form');
+        form.addEventListener('submit', e => {
+          e.preventDefault();
+          let score = 0;
+          questions.forEach((q, i) => {
+            const selected = form.querySelector(`input[name="q${i}"]:checked`);
+            const resultEl = document.getElementById(`result-q${i}`);
+            if (!selected) {
+              resultEl.textContent = 'No answer selected.';
+              resultEl.className = 'result wrong';
+              return;
+            }
+            if (selected.value === q.Answer) {
+              score++;
+              resultEl.textContent = 'Correct!';
+              resultEl.className = 'result correct';
+            } else {
+              resultEl.textContent = `Wrong! Correct answer: ${q.Answer}`;
+              resultEl.className = 'result wrong';
+            }
+          });
+          const scoreContainer = document.getElementById('score-container');
+          scoreContainer.textContent = `Your score: ${score} / ${questions.length}`;
+        });
       });
   </script>
 </body>
