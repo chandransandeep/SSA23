@@ -5,9 +5,264 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Exam Preparation Quiz</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
-  <!-- (Keep your CSS as it is or as needed) -->
   <style>
-    /* ... your CSS ... */
+    body {
+      font-family: 'Inter', Arial, sans-serif;
+      margin: 20px;
+      max-width: 800px;
+      line-height: 1.6;
+      color: #333;
+      background-color: #f4f7f6;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      box-sizing: border-box;
+      padding-bottom: 50px;
+    }
+    h1 {
+      color: #2c3e50;
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 2.2em;
+      border-bottom: 2px solid #3498db;
+      padding-bottom: 10px;
+      width: 100%;
+      max-width: 700px;
+    }
+    .quiz-container {
+      background-color: #ffffff;
+      border: 1px solid #ddd;
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      width: 100%;
+      max-width: 700px;
+      box-sizing: border-box;
+    }
+    .settings-panel {
+      background-color: #e9f0f3;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 25px;
+      border: 1px solid #c9dbe4;
+    }
+    .settings-panel label {
+      display: block;
+      margin-bottom: 10px;
+      font-weight: bold;
+      color: #34495e;
+    }
+    .settings-panel input[type="number"],
+    .settings-panel input[type="checkbox"],
+    .settings-panel input[type="text"] {
+      margin-right: 8px;
+    }
+    .settings-panel input[type="number"] {
+      padding: 5px 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      width: 80px;
+    }
+    .settings-panel input[type="text"] {
+      padding: 5px 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      width: calc(100% - 100px);
+      max-width: 250px;
+    }
+    .settings-panel button {
+      background-color: #e74c3c;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 0.9em;
+      transition: background-color 0.2s ease;
+    }
+    .settings-panel button:hover {
+      background-color: #c0392b;
+    }
+    #timer-display {
+      text-align: center;
+      font-size: 1.5em;
+      font-weight: bold;
+      color: #e74c3c;
+      margin-bottom: 20px;
+      padding: 10px;
+      background-color: #fff0f0;
+      border: 1px solid #f0a8a8;
+      border-radius: 8px;
+      display: none;
+    }
+    #user-id-display {
+      text-align: center;
+      font-size: 0.9em;
+      margin-top: 15px;
+      padding: 8px;
+      background-color: #f0f4f7;
+      border-radius: 5px;
+      color: #555;
+      word-break: break-all;
+    }
+    .question {
+      border-bottom: 1px solid #eee;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+    }
+    .question:last-of-type {
+      border-bottom: none;
+      margin-bottom: 0;
+      padding-bottom: 0;
+    }
+    .question-title {
+      font-weight: bold;
+      margin-bottom: 12px;
+      font-size: 1.1em;
+      color: #34495e;
+    }
+    .options label {
+      display: flex;
+      align-items: center;
+      margin-bottom: 8px;
+      cursor: pointer;
+      padding: 10px 15px;
+      border-radius: 6px;
+      transition: background-color 0.2s ease, transform 0.1s ease;
+      border: 1px solid #e0e0e0;
+    }
+    .options label:hover {
+      background-color: #f5f8ff;
+      transform: translateY(-2px);
+    }
+    .options input[type="radio"] {
+      margin-right: 12px;
+      transform: scale(1.2);
+    }
+    .question-actions {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 10px;
+    }
+    .validate-btn {
+      padding: 8px 15px;
+      font-size: 0.9em;
+      background-color: #83c1e2;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-left: 10px;
+      transition: background-color 0.2s ease, transform 0.1s ease;
+    }
+    .validate-btn:hover {
+      background-color: #61a7d6;
+      transform: translateY(-1px);
+    }
+    .submit-btn, .retake-btn {
+      display: block;
+      width: 100%;
+      padding: 15px 20px;
+      font-size: 1.2em;
+      background-color: #3498db;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 30px;
+      transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease;
+      box-shadow: 0 4px 10px rgba(52, 152, 219, 0.3);
+    }
+    .submit-btn:hover, .retake-btn:hover {
+      background-color: #2980b9;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 15px rgba(41, 128, 185, 0.4);
+    }
+    .retake-btn {
+      background-color: #2ecc71;
+      box-shadow: 0 4px 10px rgba(46, 204, 113, 0.3);
+      display: none;
+    }
+    .retake-btn:hover {
+      background-color: #27ae60;
+      box-shadow: 0 6px 15px rgba(39, 174, 96, 0.4);
+    }
+    .result {
+      margin-top: 10px;
+      font-weight: bold;
+      padding: 8px 15px;
+      border-radius: 6px;
+      text-align: center;
+      font-size: 0.95em;
+    }
+    .correct {
+      color: #27ae60;
+      background-color: #e6ffe6;
+      border: 1px solid #a8e6a8;
+    }
+    .wrong {
+      color: #e74c3c;
+      background-color: #ffe6e6;
+      border: 1px solid #f0a8a8;
+    }
+    .explanation {
+      margin-top: 10px;
+      padding: 10px 15px;
+      background-color: #f0f8ff;
+      border: 1px solid #aed6f1;
+      border-radius: 6px;
+      font-size: 0.9em;
+      color: #2c3e50;
+      line-height: 1.5;
+      display: none;
+    }
+    .score-container {
+      margin-top: 40px;
+      padding: 20px;
+      background-color: #ecf0f1;
+      border-radius: 10px;
+      text-align: center;
+      font-size: 1.3em;
+      font-weight: bold;
+      color: #2c3e50;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    }
+    .error-message {
+      color: #c0392b;
+      font-weight: bold;
+      text-align: center;
+      margin-top: 20px;
+      padding: 15px;
+      background-color: #fbecec;
+      border: 1px solid #e74c3c;
+      border-radius: 8px;
+    }
+    @media (max-width: 600px) {
+      body {
+        margin: 10px;
+      }
+      h1 {
+        font-size: 1.8em;
+        margin-bottom: 20px;
+        padding-bottom: 8px;
+      }
+      .quiz-container {
+        padding: 15px;
+        border-radius: 8px;
+      }
+      .submit-btn, .retake-btn {
+        font-size: 1.1em;
+        padding: 12px 15px;
+      }
+      .score-container {
+        font-size: 1.1em;
+        padding: 15px;
+      }
+      .options label {
+        padding: 8px 10px;
+      }
+    }
   </style>
   <!-- Firebase SDK Imports -->
   <script type="module">
@@ -26,12 +281,11 @@
       measurementId: "G-0K69MEBD6Q"
     };
 
-    // Global Firebase variables (to be used by the main script)
     window.firebaseApp = initializeApp(firebaseConfig);
     window.db = getFirestore(window.firebaseApp);
     window.auth = getAuth(window.firebaseApp);
     window.currentUserId = null;
-    window.isFirebaseReady = false; // Flag to indicate Firebase is initialized and authenticated
+    window.isFirebaseReady = false;
 
     // Expose Firestore functions globally if needed
     window.doc = doc;
@@ -78,24 +332,288 @@
 <body>
   <h1 id="quiz-title-display">Exam Preparation Quiz</h1>
   <div class="quiz-container">
-    <!-- ... your UI as before ... -->
+    <div class="settings-panel">
+        <label for="quiz-title-input">Quiz Title:</label>
+        <input type="text" id="quiz-title-input" placeholder="e.g., My Biology Exam Prep" value="General Exam Preparation Quiz">
+        <br><br>
+        <label for="num-questions">Number of Questions to Practice (leave blank for all):</label>
+        <input type="number" id="num-questions" min="1" placeholder="All" value="10">
+        <br><br>
+        <label>
+            <input type="checkbox" id="enable-timer-checkbox"> Enable Timer
+        </label>
+        <label for="time-limit-minutes" style="margin-top: 5px;">Time Limit (minutes):</label>
+        <input type="number" id="time-limit-minutes" min="1" value="10">
+        <br><br>
+        <button type="button" id="clear-wrong-answers-btn">Clear Wrong Answers History</button>
+    </div>
+
+    <div id="timer-display"></div>
     <div id="user-id-display">Authenticating...</div>
+
+    <form id="quiz-form">
+      <div id="questions-container">Loading questions...</div>
+      <button type="submit" class="submit-btn">Submit Answers</button>
+      <button type="button" id="retake-quiz-btn" class="retake-btn">Retake Quiz</button>
+    </form>
+    <div id="score-container" class="score-container"></div>
     <div id="error-message" class="error-message"></div>
-    <!-- ... rest of your quiz form and controls ... -->
   </div>
   <script type="text/javascript">
-    // Your main quiz logic goes here, using window.db, window.currentUserId, etc.
-    // Make sure to check window.isFirebaseReady before making Firestore requests.
-    // Example:
+    // --- DEMO QUIZ DATA IF CSV IS MISSING ---
+    const DEMO_QUESTIONS = [
+      {
+        QuestionText: "What is the capital of France?",
+        OptionA: "London",
+        OptionB: "Berlin",
+        OptionC: "Paris",
+        OptionD: "Madrid",
+        Answer: "C",
+        Explanation: "Paris is the capital and most populous city of France."
+      },
+      {
+        QuestionText: "Which planet is known as the Red Planet?",
+        OptionA: "Venus",
+        OptionB: "Mars",
+        OptionC: "Jupiter",
+        OptionD: "Saturn",
+        Answer: "B",
+        Explanation: "Mars is called the Red Planet due to iron oxide (rust) on its surface."
+      }
+    ];
+
+    let allQuizQuestions = [];
+    let currentQuizQuestions = [];
+    let wronglyAnsweredQuestions = new Set();
+    let quizForm = null;
+
+    // Parse CSV logic as before
+    function parseCSV(text) {
+      const lines = text.trim().split('\n');
+      if (lines.length === 0) return [];
+      const headers = lines[0].split(',').map(header => header.trim());
+      const requiredHeaders = ["QuestionText", "OptionA", "OptionB", "OptionC", "OptionD", "Answer", "Explanation"];
+      const missingHeaders = requiredHeaders.filter(h => !headers.includes(h));
+      if (missingHeaders.length > 0) {
+        throw new Error(`Missing required CSV headers: ${missingHeaders.join(', ')}`);
+      }
+      return lines.slice(1).map(line => {
+        const values = line.split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/).map(v => v.replace(/^"|"$/g, '').trim());
+        if (values.length !== headers.length) return null;
+        return headers.reduce((obj, h, i) => { obj[h] = values[i]; return obj; }, {});
+      }).filter(row => row !== null);
+    }
+
+    function shuffleArray(array) {
+      const shuffled = [...array];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      return shuffled;
+    }
+
+    function createQuestionElement(question, index) {
+      const options = {
+        A: question.OptionA || '',
+        B: question.OptionB || '',
+        C: question.OptionC || '',
+        D: question.OptionD || ''
+      };
+      return `
+        <div class="question" data-question-index="${index}">
+          <div class="question-title">${index + 1}. ${question.QuestionText || 'No Question Text'}</div>
+          <div class="options">
+            ${Object.entries(options).map(([key, value]) => `
+              <label>
+                <input type="radio" name="q${index}" value="${key}" /> <span>${key}. ${value}</span>
+              </label>
+            `).join('')}
+          </div>
+          <div class="result" id="result-q${index}"></div>
+          <div class="explanation" id="explanation-q${index}"></div>
+          <div class="question-actions">
+            <button type="button" class="validate-btn" data-question-index="${index}">Validate Answer</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function validateSingleQuestion(index) {
+      const question = currentQuizQuestions[index];
+      const selectedOption = quizForm.querySelector(`input[name="q${index}"]:checked`);
+      const resultElement = document.getElementById(`result-q${index}`);
+      const explanationElement = document.getElementById(`explanation-q${index}`);
+      const questionDiv = document.querySelector(`.question[data-question-index="${index}"]`);
+      resultElement.textContent = '';
+      resultElement.className = 'result';
+      explanationElement.textContent = '';
+      explanationElement.style.display = 'none';
+      questionDiv.querySelectorAll('label').forEach(label => {
+        label.style.backgroundColor = '';
+        label.style.border = '1px solid #e0e0e0';
+      });
+
+      if (!selectedOption) {
+        resultElement.textContent = 'Please select an answer for this question.';
+        resultElement.classList.add('wrong');
+        return false;
+      }
+
+      const selectedValue = selectedOption.value;
+      const correctAnswer = question.Answer;
+
+      if (selectedValue === correctAnswer) {
+        resultElement.textContent = 'Correct! 🎉';
+        resultElement.classList.add('correct');
+        selectedOption.parentElement.style.backgroundColor = '#e6ffe6';
+        selectedOption.parentElement.style.border = '1px solid #27ae60';
+        wronglyAnsweredQuestions.delete(question.QuestionText);
+        saveWronglyAnsweredQuestions();
+        return true;
+      } else {
+        resultElement.textContent = `Wrong! The correct answer was ${correctAnswer}.`;
+        resultElement.classList.add('wrong');
+        selectedOption.parentElement.style.backgroundColor = '#ffe6e6';
+        selectedOption.parentElement.style.border = '1px solid #e74c3c';
+        wronglyAnsweredQuestions.add(question.QuestionText);
+        saveWronglyAnsweredQuestions();
+        if (question.Explanation) {
+          explanationElement.textContent = `Explanation: ${question.Explanation}`;
+          explanationElement.style.display = 'block';
+        }
+        const correctLabel = quizForm.querySelector(`input[name="q${index}"][value="${correctAnswer}"]`);
+        if (correctLabel) {
+          correctLabel.parentElement.style.backgroundColor = '#d4edda';
+          correctLabel.parentElement.style.border = '1px solid #27ae60';
+        }
+        return false;
+      }
+    }
+
+    function disableQuizInputs() {
+      quizForm.querySelectorAll('input[type="radio"]').forEach(input => {
+        input.disabled = true;
+      });
+      quizForm.querySelector('.submit-btn').style.display = 'none';
+      quizForm.querySelectorAll('.validate-btn').forEach(btn => {
+        btn.disabled = true;
+        btn.style.opacity = 0.5;
+        btn.style.cursor = 'not-allowed';
+      });
+      document.getElementById('retake-quiz-btn').style.display = 'block';
+    }
+
+    function enableQuizInputs() {
+      quizForm.querySelectorAll('input[type="radio"]').forEach(input => {
+        input.disabled = false;
+        input.checked = false;
+      });
+      quizForm.querySelector('.submit-btn').style.display = 'block';
+      quizForm.querySelectorAll('.validate-btn').forEach(btn => {
+        btn.disabled = false;
+        btn.style.opacity = 1;
+        btn.style.cursor = 'pointer';
+      });
+      document.getElementById('retake-quiz-btn').style.display = 'none';
+      document.getElementById('score-container').textContent = '';
+      document.getElementById('error-message').textContent = '';
+      document.querySelectorAll('.question').forEach(qDiv => {
+        qDiv.querySelector('.result').textContent = '';
+        qDiv.querySelector('.result').className = 'result';
+        qDiv.querySelector('.explanation').textContent = '';
+        qDiv.querySelector('.explanation').style.display = 'none';
+        qDiv.querySelectorAll('label').forEach(label => {
+          label.style.backgroundColor = '';
+          label.style.border = '1px solid #e0e0e0';
+        });
+      });
+    }
+
+    // Load questions (CSV or fallback)
+    function loadQuiz() {
+      enableQuizInputs();
+      const questionsContainer = document.getElementById('questions-container');
+      questionsContainer.innerHTML = 'Loading questions...';
+      fetch('questions.csv')
+        .then(response => {
+          if (!response.ok) throw new Error('questions.csv not found - using demo questions.');
+          return response.text();
+        })
+        .then(csvText => {
+          allQuizQuestions = parseCSV(csvText);
+          if (allQuizQuestions.length === 0) {
+            throw new Error('No questions found in questions.csv. Using demo questions.');
+          }
+        })
+        .catch(() => {
+          allQuizQuestions = DEMO_QUESTIONS;
+        })
+        .finally(() => {
+          const numQuestionsInput = document.getElementById('num-questions');
+          const numToPractice = parseInt(numQuestionsInput.value) || allQuizQuestions.length;
+          currentQuizQuestions = shuffleArray(allQuizQuestions).slice(0, numToPractice);
+          questionsContainer.innerHTML = currentQuizQuestions.map(createQuestionElement).join('');
+        });
+    }
+
+    // Save/load wrong answers in localStorage only (for now)
+    function saveWronglyAnsweredQuestions() {
+      localStorage.setItem('quizWrongAnswers', JSON.stringify(Array.from(wronglyAnsweredQuestions)));
+    }
+    function loadWronglyAnsweredQuestions() {
+      const stored = localStorage.getItem('quizWrongAnswers');
+      if (stored) {
+        wronglyAnsweredQuestions = new Set(JSON.parse(stored));
+      }
+    }
+
+    // Set up after Firebase is ready
     window.loadSettingsAndQuiz = async function() {
       if (!window.isFirebaseReady || !window.db || !window.currentUserId) {
         document.getElementById('error-message').textContent = 'Waiting for authentication...';
         return;
       }
       document.getElementById('error-message').textContent = '';
-      // ... load user settings and quiz, interact with Firestore using window.db ...
+      loadWronglyAnsweredQuestions();
+      loadQuiz();
     };
-    // ... rest of your JS logic ...
+
+    // DOM event handlers
+    document.addEventListener('DOMContentLoaded', () => {
+      quizForm = document.getElementById('quiz-form');
+      document.getElementById('questions-container').addEventListener('click', (event) => {
+        if (event.target.classList.contains('validate-btn')) {
+          const index = parseInt(event.target.dataset.questionIndex);
+          validateSingleQuestion(index);
+        }
+      });
+      quizForm.addEventListener('submit', e => {
+        e.preventDefault();
+        let score = 0;
+        currentQuizQuestions.forEach((question, index) => {
+          const isCorrect = validateSingleQuestion(index);
+          if (isCorrect) score++;
+        });
+        document.getElementById('score-container').textContent = `Your score: ${score} out of ${currentQuizQuestions.length}`;
+        disableQuizInputs();
+      });
+      document.getElementById('retake-quiz-btn').addEventListener('click', () => {
+        loadQuiz();
+      });
+      document.getElementById('clear-wrong-answers-btn').addEventListener('click', () => {
+        wronglyAnsweredQuestions.clear();
+        saveWronglyAnsweredQuestions();
+        loadQuiz();
+        document.getElementById('error-message').textContent = 'Wrong answers history cleared!';
+        setTimeout(() => document.getElementById('error-message').textContent = '', 3000);
+      });
+      document.getElementById('num-questions').addEventListener('change', () => loadQuiz());
+      document.getElementById('quiz-title-input').addEventListener('input', (e) => {
+        document.getElementById('quiz-title-display').textContent = e.target.value;
+        document.title = e.target.value;
+      });
+    });
   </script>
 </body>
 </html>
