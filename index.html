@@ -1,413 +1,489 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Exam Preparation Quiz</title>
-  <style>
-    body {
-      font-family: 'Inter', Arial, sans-serif;
-      margin: 20px;
-      max-width: 800px;
-      line-height: 1.6;
-      color: #333;
-      background-color: #f4f7f6;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      min-height: 100vh;
-      box-sizing: border-box;
-      padding-bottom: 50px;
-    }
-    h1 {
-      color: #2c3e50;
-      text-align: center;
-      margin-bottom: 30px;
-      font-size: 2.2em;
-      border-bottom: 2px solid #3498db;
-      padding-bottom: 10px;
-      width: 100%;
-      max-width: 700px;
-    }
-    .quiz-container {
-      background-color: #ffffff;
-      border: 1px solid #ddd;
-      padding: 25px;
-      border-radius: 12px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-      width: 100%;
-      max-width: 700px;
-      box-sizing: border-box;
-    }
-    .settings-panel {
-      background-color: #e9f0f3;
-      padding: 15px;
-      border-radius: 8px;
-      margin-bottom: 25px;
-      border: 1px solid #c9dbe4;
-    }
-    .settings-panel label {
-        display: block;
-        margin-bottom: 10px;
-        font-weight: bold;
-        color: #34495e;
-    }
-    .settings-panel input[type="number"],
-    .settings-panel input[type="checkbox"],
-    .settings-panel input[type="text"] {
-        margin-right: 8px;
-    }
-    .settings-panel input[type="number"] {
-        padding: 5px 8px;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-        width: 80px;
-    }
-    .settings-panel input[type="text"] {
-        padding: 5px 8px;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-        width: calc(100% - 100px);
-        max-width: 250px;
-    }
-    .settings-panel button {
-        background-color: #e74c3c;
-        color: white;
-        border: none;
-        padding: 8px 12px;
-        border-radius: 5px;
-        cursor: pointer;
-        font-size: 0.9em;
-        transition: background-color 0.2s ease;
-    }
-    .settings-panel button:hover {
-        background-color: #c0392b;
-    }
-    #timer-display {
-        text-align: center;
-        font-size: 1.5em;
-        font-weight: bold;
-        color: #e74c3c;
-        margin-bottom: 20px;
-        padding: 10px;
-        background-color: #fff0f0;
-        border: 1px solid #f0a8a8;
-        border-radius: 8px;
-        display: none;
-    }
-    #user-id-display {
-        text-align: center;
-        font-size: 0.9em;
-        margin-top: 15px;
-        padding: 8px;
-        background-color: #f0f4f7;
-        border-radius: 5px;
-        color: #555;
-        word-break: break-all;
-    }
-    .question {
-      border-bottom: 1px solid #eee;
-      margin-bottom: 20px;
-      padding-bottom: 15px;
-    }
-    .question:last-of-type {
-      border-bottom: none;
-      margin-bottom: 0;
-      padding-bottom: 0;
-    }
-    .question-title {
-      font-weight: bold;
-      margin-bottom: 12px;
-      font-size: 1.1em;
-      color: #34495e;
-    }
-    .options label {
-      display: flex;
-      align-items: center;
-      margin-bottom: 8px;
-      cursor: pointer;
-      padding: 10px 15px;
-      border-radius: 6px;
-      transition: background-color 0.2s ease, transform 0.1s ease;
-      border: 1px solid #e0e0e0;
-    }
-    .options label:hover {
-      background-color: #f5f8ff;
-      transform: translateY(-2px);
-    }
-    .options input[type="radio"] {
-      margin-right: 12px;
-      transform: scale(1.2);
-    }
-    .question-actions {
-        display: flex;
-        justify-content: flex-end;
-        margin-top: 10px;
-    }
-    .validate-btn {
-      padding: 8px 15px;
-      font-size: 0.9em;
-      background-color: #83c1e2;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      margin-left: 10px;
-      transition: background-color 0.2s ease, transform 0.1s ease;
-    }
-    .validate-btn:hover {
-      background-color: #61a7d6;
-      transform: translateY(-1px);
-    }
-    .submit-btn, .retake-btn {
-      display: block;
-      width: 100%;
-      padding: 15px 20px;
-      font-size: 1.2em;
-      background-color: #3498db;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      margin-top: 30px;
-      transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease;
-      box-shadow: 0 4px 10px rgba(52, 152, 219, 0.3);
-    }
-    .submit-btn:hover, .retake-btn:hover {
-      background-color: #2980b9;
-      transform: translateY(-2px);
-      box-shadow: 0 6px 15px rgba(41, 128, 185, 0.4);
-    }
-    .retake-btn {
-        background-color: #2ecc71;
-        box-shadow: 0 4px 10px rgba(46, 204, 113, 0.3);
-        display: none;
-    }
-    .retake-btn:hover {
-        background-color: #27ae60;
-        box-shadow: 0 6px 15px rgba(39, 174, 96, 0.4);
-    }
-    .result {
-      margin-top: 10px;
-      font-weight: bold;
-      padding: 8px 15px;
-      border-radius: 6px;
-      text-align: center;
-      font-size: 0.95em;
-    }
-    .correct {
-      color: #27ae60;
-      background-color: #e6ffe6;
-      border: 1px solid #a8e6a8;
-    }
-    .wrong {
-      color: #e74c3c;
-      background-color: #ffe6e6;
-      border: 1px solid #f0a8a8;
-    }
-    .explanation {
-      margin-top: 10px;
-      padding: 10px 15px;
-      background-color: #f0f8ff;
-      border: 1px solid #aed6f1;
-      border-radius: 6px;
-      font-size: 0.9em;
-      color: #2c3e50;
-      line-height: 1.5;
-      display: none;
-    }
-    .score-container {
-      margin-top: 40px;
-      padding: 20px;
-      background-color: #ecf0f1;
-      border-radius: 10px;
-      text-align: center;
-      font-size: 1.3em;
-      font-weight: bold;
-      color: #2c3e50;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-    }
-    .error-message {
-        color: #c0392b;
-        font-weight: bold;
-        text-align: center;
-        margin-top: 20px;
-        padding: 15px;
-        background-color: #fbecec;
-        border: 1px solid #e74c3c;
-        border-radius: 8px;
-    }
-    .options input[type="radio"]:disabled + span {
-      cursor: not-allowed;
-      opacity: 0.7;
-    }
-    .options label:has(input[type="radio"]:disabled) {
-        cursor: not-allowed;
-        background-color: #f0f0f0;
-        transform: none;
-    }
-    @media (max-width: 600px) {
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SSA23 Project</title>
+    
+    <!-- Meta tags for better SEO -->
+    <meta name="description" content="SSA23 Project - Your project description here">
+    <meta name="keywords" content="SSA23, web development, firebase">
+    <meta name="author" content="Sandeep Chandran">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="favicon.png">
+    
+    <!-- Custom CSS -->
+    <style>
+        :root {
+            --primary-color: #4285F4;
+            --secondary-color: #34A853;
+            --background-color: #f8f9fa;
+            --text-color: #333;
+            --accent-color: #FBBC05;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
         body {
-            margin: 10px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--background-color);
+            padding: 0;
+            margin: 0;
         }
-        h1 {
-            font-size: 1.8em;
-            margin-bottom: 20px;
-            padding-bottom: 8px;
+        
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
         }
-        .quiz-container {
-            padding: 15px;
+        
+        header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 1rem 0;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        
+        .nav-links {
+            display: flex;
+            list-style: none;
+        }
+        
+        .nav-links li {
+            margin-left: 1.5rem;
+        }
+        
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            transition: opacity 0.3s;
+        }
+        
+        .nav-links a:hover {
+            opacity: 0.8;
+        }
+        
+        main {
+            padding: 2rem 0;
+        }
+        
+        section {
+            margin-bottom: 2rem;
+        }
+        
+        h1, h2, h3 {
+            margin-bottom: 1rem;
+        }
+        
+        .hero {
+            text-align: center;
+            padding: 3rem 0;
+            background-color: white;
             border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
         }
-        .submit-btn, .retake-btn {
-            font-size: 1.1em;
-            padding: 12px 15px;
+        
+        .hero h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
         }
-        .score-container {
-            font-size: 1.1em;
-            padding: 15px;
+        
+        .hero p {
+            font-size: 1.2rem;
+            max-width: 700px;
+            margin: 0 auto 1.5rem;
         }
-        .options label {
-            padding: 8px 10px;
+        
+        .btn {
+            display: inline-block;
+            background-color: var(--primary-color);
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border-radius: 4px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: background-color 0.3s;
+            border: none;
+            cursor: pointer;
         }
-    }
-  </style>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
-  <!-- Firebase SDK Imports -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-    window.firebaseApp = null;
-    window.db = null;
-    window.auth = null;
-    window.currentUserId = null;
-    window.isFirebaseReady = false;
-
-    window.doc = doc;
-    window.getDoc = getDoc;
-    window.setDoc = setDoc;
-    window.updateDoc = updateDoc;
-    window.collection = collection;
-    window.deleteDoc = deleteDoc;
-
-    function getUserDocRef(userId) {
-      const appId = firebaseConfig.projectId;
-      return window.doc(window.db, 'artifacts', appId, 'users', userId, 'quizData', 'userSettings');
-    }
-
-    document.addEventListener('DOMContentLoaded', async () => {
-      const firebaseConfig = {
-        apiKey: "AIzaSyCmlSLhRNeOrEG4aT9t-JK20QAjzpdELVc",
-        authDomain: "studybuddy-58e84.firebaseapp.com",
-        projectId: "studybuddy-58e84",
-        storageBucket: "studybuddy-58e84.appspot.com",
-        messagingSenderId: "143466700741",
-        appId: "1:143466700741:web:9db108d70302aed8c435ac",
-        measurementId: "G-0K69MEBD6Q"
-      };
-      window.firebaseConfig = firebaseConfig;
-      window.firebaseApp = initializeApp(firebaseConfig);
-      window.db = getFirestore(window.firebaseApp);
-      window.auth = getAuth(window.firebaseApp);
-
-      if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-        try {
-          await signInWithCustomToken(window.auth, __initial_auth_token);
-        } catch (error) {
-          document.getElementById('error-message').textContent = `Authentication error: ${error.message}. Attempting anonymous sign-in...`;
-          await signInAnonymously(window.auth);
+        
+        .btn:hover {
+            background-color: #3367d6;
         }
-      } else {
-        await signInAnonymously(window.auth);
-      }
-
-      onAuthStateChanged(window.auth, (user) => {
-        if (user) {
-          window.currentUserId = user.uid;
-          document.getElementById('user-id-display').textContent = `Your User ID: ${window.currentUserId}`;
-          window.isFirebaseReady = true;
-          window.loadSettingsAndQuiz();
-        } else {
-          window.currentUserId = null;
-          document.getElementById('user-id-display').textContent = 'Not signed in.';
-          window.isFirebaseReady = false;
+        
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
         }
-      });
-    });
-  </script>
+        
+        .feature-card {
+            background-color: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .feature-card h3 {
+            color: var(--primary-color);
+        }
+        
+        footer {
+            background-color: #333;
+            color: white;
+            padding: 2rem 0;
+            margin-top: 3rem;
+        }
+        
+        .footer-content {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+        }
+        
+        .footer-column {
+            flex: 1;
+            margin-bottom: 1rem;
+            min-width: 200px;
+        }
+        
+        .footer-column h3 {
+            margin-bottom: 1rem;
+        }
+        
+        .footer-column ul {
+            list-style: none;
+        }
+        
+        .footer-column ul li {
+            margin-bottom: 0.5rem;
+        }
+        
+        .footer-column a {
+            color: #ddd;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        
+        .footer-column a:hover {
+            color: white;
+        }
+        
+        .footer-bottom {
+            margin-top: 2rem;
+            text-align: center;
+            padding-top: 1rem;
+            border-top: 1px solid #555;
+        }
+        
+        .date-time {
+            text-align: center;
+            padding: 0.5rem;
+            background-color: var(--accent-color);
+            color: white;
+            font-weight: bold;
+        }
+        
+        /* Firebase auth UI elements */
+        .auth-container {
+            max-width: 500px;
+            margin: 0 auto;
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+        
+        /* Responsive styles */
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+            
+            .mobile-menu-btn {
+                display: block;
+            }
+            
+            .features {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </head>
 <body>
-  <h1 id="quiz-title-display">Exam Preparation Quiz</h1>
-  <div class="quiz-container">
-    <div class="settings-panel">
-        <label for="quiz-title-input">Quiz Title:</label>
-        <input type="text" id="quiz-title-input" placeholder="e.g., My Biology Exam Prep" value="General Exam Preparation Quiz">
-        <br><br>
-        <label for="num-questions">Number of Questions to Practice (leave blank for all):</label>
-        <input type="number" id="num-questions" min="1" placeholder="All" value="10">
-        <br><br>
-        <label>
-            <input type="checkbox" id="enable-timer-checkbox"> Enable Timer
-        </label>
-        <label for="time-limit-minutes" style="margin-top: 5px;">Time Limit (minutes):</label>
-        <input type="number" id="time-limit-minutes" min="1" value="10">
-        <br><br>
-        <button type="button" id="clear-wrong-answers-btn">Clear Wrong Answers History</button>
-        <button type="button" id="toggle-quiz-mode-btn">Retake Only Wrong/Unanswered</button>
-    </div>
-    <div id="timer-display"></div>
-    <div id="user-id-display">Authenticating...</div>
-    <form id="quiz-form">
-      <div id="questions-container">Loading questions...</div>
-      <button type="submit" class="submit-btn">Submit Answers</button>
-      <button type="button" id="retake-quiz-btn" class="retake-btn">Retake Quiz</button>
-    </form>
-    <div id="score-container" class="score-container"></div>
-    <div id="error-message" class="error-message"></div>
-  </div>
-  <script type="text/javascript">
-    // --- Firestore save/load logic for wronglyAnsweredQuestions ---
-    let wronglyAnsweredQuestions = new Set();
+    <header>
+        <div class="container">
+            <nav>
+                <div class="logo">SSA23</div>
+                <ul class="nav-links">
+                    <li><a href="#home">Home</a></li>
+                    <li><a href="#features">Features</a></li>
+                    <li><a href="#about">About</a></li>
+                    <li><a href="#contact">Contact</a></li>
+                    <li><a href="#" id="login-btn">Login</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
 
-    window.loadSettingsAndQuiz = async function() {
-      if (!window.isFirebaseReady || !window.db || !window.currentUserId) {
-        document.getElementById('error-message').textContent = 'Waiting for authentication...';
-        return;
-      }
-      document.getElementById('error-message').textContent = '';
-      await loadWronglyAnsweredQuestions();
-      // ... call loadSettings and loadQuiz as in your working version ...
-      // You can paste in your original quiz logic here
-    };
+    <div class="date-time">Current Date/Time: 2025-06-13 23:17:50 UTC</div>
 
-    async function loadWronglyAnsweredQuestions() {
-      if (!window.isFirebaseReady || !window.db || !window.currentUserId) return;
-      try {
-        const docSnap = await window.getDoc(getUserDocRef(window.currentUserId));
-        if (docSnap.exists() && docSnap.data().wronglyAnswered) {
-          wronglyAnsweredQuestions = new Set(JSON.parse(docSnap.data().wronglyAnswered));
-        } else {
-          wronglyAnsweredQuestions = new Set();
+    <main class="container">
+        <section id="home" class="hero">
+            <h1>Welcome to SSA23 Project</h1>
+            <p>An innovative solution powered by Firebase and hosted on GitHub Pages.</p>
+            <a href="#features" class="btn">Learn More</a>
+        </section>
+
+        <section id="features">
+            <h2>Key Features</h2>
+            <div class="features">
+                <div class="feature-card">
+                    <h3>Feature 1</h3>
+                    <p>Description of your first feature. Explain how users will benefit from this.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>Feature 2</h3>
+                    <p>Description of your second feature. Explain how users will benefit from this.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>Feature 3</h3>
+                    <p>Description of your third feature. Explain how users will benefit from this.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="about">
+            <h2>About SSA23</h2>
+            <p>Add information about your project, its goals, and your vision here. What problems does it solve? Who is it for?</p>
+        </section>
+
+        <section id="login-section" style="display: none;">
+            <h2>Login / Register</h2>
+            <div class="auth-container">
+                <div id="firebaseui-auth-container"></div>
+            </div>
+        </section>
+
+        <section id="user-dashboard" style="display: none;">
+            <h2>Welcome, <span id="user-name">chandransandeep</span>!</h2>
+            <p>Your personalized dashboard content goes here.</p>
+            <button id="logout-btn" class="btn">Logout</button>
+        </section>
+
+        <section id="contact">
+            <h2>Contact Us</h2>
+            <p>Have questions or feedback? Reach out to us!</p>
+            <form id="contact-form">
+                <div class="form-group">
+                    <label for="name">Name</label>
+                    <input type="text" id="name" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="message">Message</label>
+                    <textarea id="message" class="form-control" rows="5" required></textarea>
+                </div>
+                <button type="submit" class="btn">Send Message</button>
+            </form>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-column">
+                    <h3>SSA23</h3>
+                    <p>Your project tagline or brief description.</p>
+                </div>
+                <div class="footer-column">
+                    <h3>Links</h3>
+                    <ul>
+                        <li><a href="#home">Home</a></li>
+                        <li><a href="#features">Features</a></li>
+                        <li><a href="#about">About</a></li>
+                        <li><a href="#contact">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="footer-column">
+                    <h3>Connect</h3>
+                    <ul>
+                        <li><a href="#">GitHub</a></li>
+                        <li><a href="#">Twitter</a></li>
+                        <li><a href="#">LinkedIn</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 SSA23 - All Rights Reserved</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Firebase SDK - Keep your existing Firebase configuration -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/ui/6.0.1/firebase-ui-auth.js"></script>
+    <link type="text/css" rel="stylesheet" href="https://www.gstatic.com/firebasejs/ui/6.0.1/firebase-ui-auth.css" />
+
+    <!-- Your Firebase Configuration - Keep your existing Firebase config -->
+    <script>
+        // Firebase configuration - KEEP YOUR EXISTING CONFIG
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        
+        // Firebase Auth UI configuration
+        const ui = new firebaseui.auth.AuthUI(firebase.auth());
+        
+        // Login button functionality
+        document.getElementById('login-btn').addEventListener('click', function(e) {
+            e.preventDefault();
+            document.getElementById('login-section').style.display = 'block';
+            document.getElementById('home').style.display = 'none';
+            document.getElementById('features').style.display = 'none';
+            document.getElementById('about').style.display = 'none';
+            document.getElementById('contact').style.display = 'none';
+            
+            // Initialize the FirebaseUI Widget
+            ui.start('#firebaseui-auth-container', {
+                signInOptions: [
+                    firebase.auth.GoogleAuthProvider.PROVIDER_ID,
+                    firebase.auth.EmailAuthProvider.PROVIDER_ID
+                ],
+                callbacks: {
+                    signInSuccessWithAuthResult: function(authResult) {
+                        // User successfully signed in
+                        showUserDashboard(authResult.user);
+                        return false;
+                    }
+                }
+            });
+        });
+        
+        // Check if user is already logged in
+        firebase.auth().onAuthStateChanged(function(user) {
+            if (user) {
+                showUserDashboard(user);
+            }
+        });
+        
+        // Logout functionality
+        document.getElementById('logout-btn').addEventListener('click', function() {
+            firebase.auth().signOut().then(function() {
+                hideUserDashboard();
+            }).catch(function(error) {
+                console.error('Sign out error:', error);
+            });
+        });
+        
+        // Contact form submission
+        document.getElementById('contact-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const message = document.getElementById('message').value;
+            
+            // Save to Firebase database
+            const databaseRef = firebase.database().ref('contacts');
+            databaseRef.push({
+                name: name,
+                email: email,
+                message: message,
+                timestamp: firebase.database.ServerValue.TIMESTAMP
+            })
+            .then(() => {
+                alert('Message sent successfully!');
+                document.getElementById('contact-form').reset();
+            })
+            .catch((error) => {
+                console.error('Error saving message:', error);
+                alert('There was an error sending your message. Please try again.');
+            });
+        });
+        
+        // Helper functions
+        function showUserDashboard(user) {
+            document.getElementById('user-name').textContent = user.displayName || user.email || "chandransandeep";
+            document.getElementById('login-section').style.display = 'none';
+            document.getElementById('user-dashboard').style.display = 'block';
+            document.getElementById('login-btn').style.display = 'none';
         }
-      } catch (e) {
-        wronglyAnsweredQuestions = new Set();
-      }
-    }
-
-    async function saveWronglyAnsweredQuestions() {
-      if (!window.isFirebaseReady || !window.db || !window.currentUserId) return;
-      try {
-        await window.setDoc(getUserDocRef(window.currentUserId), {
-          wronglyAnswered: JSON.stringify(Array.from(wronglyAnsweredQuestions)),
-          lastUpdated: new Date()
-        }, { merge: true });
-      } catch (e) {}
-    }
-
-    // Insert your remaining quiz logic here, calling saveWronglyAnsweredQuestions() after updates.
-    // Paste your original question rendering, validation, timer, and event handler code here.
-  </script>
+        
+        function hideUserDashboard() {
+            document.getElementById('user-dashboard').style.display = 'none';
+            document.getElementById('login-section').style.display = 'none';
+            document.getElementById('home').style.display = 'block';
+            document.getElementById('features').style.display = 'block';
+            document.getElementById('about').style.display = 'block';
+            document.getElementById('contact').style.display = 'block';
+            document.getElementById('login-btn').style.display = 'inline-block';
+        }
+        
+        // Display current date and time
+        function updateDateTime() {
+            const now = new Date();
+            const dateTimeString = now.toISOString().replace('T', ' ').substring(0, 19) + ' UTC';
+            document.querySelector('.date-time').textContent = 'Current Date/Time: ' + dateTimeString;
+        }
+        
+        // Update time every minute
+        setInterval(updateDateTime, 60000);
+    </script>
 </body>
 </html>
