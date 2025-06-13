@@ -275,14 +275,12 @@
         }
     }
   </style>
-  <link href="[https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap](https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap)" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
   <!-- Firebase SDK Imports -->
   <script type="module">
-    import { initializeApp } from "[https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js](https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js)";
-    // FIX: Import signInWithCustomToken explicitly
-    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "[https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js](https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js)";
-    // FIX: Import Firestore functions and expose them to window for the second script block
-    import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, deleteDoc } from "[https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js](https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js)";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     // Global Firebase variables (to be used by the main script)
     window.firebaseApp = null;
@@ -319,7 +317,6 @@
         // Sign in anonymously if no auth token is provided or user is not signed in
         if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
             try {
-                // FIX: signInWithCustomToken is now imported and defined
                 await signInWithCustomToken(window.auth, __initial_auth_token);
                 console.log("Signed in with custom token.");
             } catch (error) {
@@ -341,7 +338,6 @@
                 console.log("Firebase and user ID ready:", window.currentUserId);
                 // Now that Firebase is ready, load quiz settings and questions
                 // This function is defined in the second script block.
-                // FIX: Call loadSettingsAndQuiz only after isFirebaseReady is true.
                 window.loadSettingsAndQuiz();
             } else {
                 window.currentUserId = null;
@@ -528,7 +524,7 @@
             saveWronglyAnsweredQuestions();
             return true; // Indicate correct answer
         } else {
-            resultElement.textContent = `Wrong! The correct answer was ${correctAnswer}.`;
+            resultElement.textContent = `Wrong! The correct answer was ${correctAnswer}.`; // Always show the correct answer here on wrong
             resultElement.classList.add('wrong');
             selectedOption.parentElement.style.backgroundColor = '#ffe6e6';
             selectedOption.parentElement.style.border = '1px solid #e74c3c';
@@ -653,7 +649,7 @@
     function getUserDocRef(userId) {
         // Use the Canvas provided __app_id for unique collection paths
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        // FIX: Ensured window.doc and window.db are available and used correctly
+        // Ensured window.doc and window.db are available and used correctly
         return window.doc(window.db, 'artifacts', appId, 'users', userId, 'quizData', 'userSettings');
     }
 
@@ -671,7 +667,7 @@
         }
 
         try {
-            // FIX: Ensure window.getDoc is used correctly
+            // Ensure window.getDoc is used correctly
             const docSnap = await window.getDoc(getUserDocRef(window.currentUserId));
             if (docSnap.exists()) {
                 const data = docSnap.data();
@@ -712,7 +708,7 @@
             lastUpdated: new Date()
         };
         try {
-            // FIX: Ensure window.setDoc is used correctly
+            // Ensure window.setDoc is used correctly
             await window.setDoc(getUserDocRef(window.currentUserId), settingsData, { merge: true });
             console.log("Settings saved to Firestore.");
         } catch (e) {
@@ -732,7 +728,7 @@
         }
 
         try {
-            // FIX: Ensure window.getDoc is used correctly
+            // Ensure window.getDoc is used correctly
             const docSnap = await window.getDoc(getUserDocRef(window.currentUserId));
             if (docSnap.exists() && docSnap.data().wronglyAnswered) {
                 wronglyAnsweredQuestions = new Set(JSON.parse(docSnap.data().wronglyAnswered));
@@ -757,7 +753,7 @@
         }
 
         try {
-            // FIX: Ensure window.setDoc is used correctly
+            // Ensure window.setDoc is used correctly
             await window.setDoc(getUserDocRef(window.currentUserId), {
                 wronglyAnswered: JSON.stringify(Array.from(wronglyAnsweredQuestions)),
                 lastUpdated: new Date()
@@ -780,7 +776,7 @@
 
         wronglyAnsweredQuestions.clear();
         try {
-            // FIX: Ensure window.updateDoc is used correctly
+            // Ensure window.updateDoc is used correctly
             await window.updateDoc(getUserDocRef(window.currentUserId), {
                 wronglyAnswered: JSON.stringify([]) // Store as empty array
             });
@@ -881,7 +877,6 @@
         questionsContainer.innerHTML = 'Loading questions...'; // Show loading message
 
         console.log("Attempting to fetch questions.csv from:", new URL('questions.csv', window.location.href).href); // Debugging with absolute URL
-        // FIX: Use URL constructor for more robust path resolution
         fetch(new URL('questions.csv', window.location.href).href)
             .then(response => {
                 if (!response.ok) {
@@ -970,7 +965,7 @@
             let score = 0;
             currentQuizQuestions.forEach((question, index) => { // Use currentQuizQuestions
               // Validate each question and accumulate score
-              const isCorrect = validateSingleQuestion(index);
+              const isCorrect = validateSingleQuestion(index); // This will now show correct answer only if wrong
               if (isCorrect) {
                   score++;
               }
