@@ -80,9 +80,74 @@
         cursor: pointer;
         font-size: 0.9em;
         transition: background-color 0.2s ease;
+        margin-right: 10px;
+        margin-bottom: 5px;
     }
     .settings-panel button:hover {
         background-color: #c0392b;
+    }
+    /* Toggle Button Styles */
+    .quiz-mode-toggle {
+        display: flex;
+        align-items: center;
+        margin-bottom: 15px;
+        padding: 10px;
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+    }
+    .toggle-button {
+        background-color: #17a2b8;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.9em;
+        transition: background-color 0.2s ease;
+        margin-right: 10px;
+    }
+    .toggle-button:hover {
+        background-color: #138496;
+    }
+    .toggle-button.active {
+        background-color: #28a745;
+    }
+    .quiz-stats {
+        font-size: 0.9em;
+        color: #6c757d;
+        margin-left: auto;
+    }
+    /* Congratulations Message */
+    .congratulations-panel {
+        background-color: #d4edda;
+        border: 1px solid #c3e6cb;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        text-align: center;
+        display: none;
+    }
+    .congratulations-panel h3 {
+        color: #155724;
+        margin-bottom: 10px;
+    }
+    .congratulations-panel p {
+        color: #155724;
+        margin-bottom: 15px;
+    }
+    .congratulations-panel button {
+        background-color: #28a745;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 1em;
+        transition: background-color 0.2s ease;
+    }
+    .congratulations-panel button:hover {
+        background-color: #218838;
     }
     #timer-display {
         text-align: center;
@@ -273,6 +338,14 @@
         .options label {
             padding: 8px 10px;
         }
+        .quiz-mode-toggle {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .quiz-stats {
+            margin-left: 0;
+            margin-top: 10px;
+        }
     }
   </style>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
@@ -372,6 +445,22 @@
         <input type="number" id="time-limit-minutes" min="1" value="10">
         <br><br>
         <button type="button" id="clear-wrong-answers-btn">Clear Wrong Answers History</button>
+        <button type="button" id="clear-session-data-btn">Clear Session Data</button>
+    </div>
+
+    <!-- Congratulations Panel (hidden by default) -->
+    <div id="congratulations-panel" class="congratulations-panel">
+        <h3>🎉 Congratulations! 🎉</h3>
+        <p>You've mastered all the questions! All previously incorrect answers have been answered correctly.</p>
+        <button type="button" id="restart-all-btn">Restart with All Questions</button>
+    </div>
+
+    <!-- Quiz Mode Toggle -->
+    <div id="quiz-mode-toggle" class="quiz-mode-toggle">
+        <button type="button" id="toggle-mode-btn" class="toggle-button active">Retake Only Wrong/Unanswered</button>
+        <div class="quiz-stats" id="quiz-stats">
+            Wrong: <span id="wrong-count">0</span> | Unanswered: <span id="unanswered-count">0</span> | Correct: <span id="correct-count">0</span>
+        </div>
     </div>
 
     <div id="timer-display"></div>
@@ -399,7 +488,8 @@
         }
         document.getElementById('error-message').textContent = ''; // Clear previous auth warning
 
-        // FIX: Ensure loadWronglyAnsweredQuestions and loadSettings are awaited before loadQuiz
+        // Load session data and settings before quiz
+        await loadSessionData();
         await loadWronglyAnsweredQuestions(); // Load wrong answers history from Firestore
         await loadSettings(); // Load user settings from Firestore (needs await)
         loadQuiz(); // Proceed with quiz questions load
@@ -497,6 +587,7 @@
         const resultElement = document.getElementById(`result-q${index}`);
         const explanationElement = document.getElementById(`explanation-q${index}`); // Get explanation element
         const questionDiv = document.querySelector(`.question[data-question-index="${index}"]`);
+        const questionText = question.QuestionText;
 
         // Clear previous feedback styles
         resultElement.textContent = '';
@@ -513,6 +604,10 @@
         if (!selectedOption) {
             resultElement.textContent = 'Please select an answer for this question.';
             resultElement.classList.add('wrong');
+            // Track as unanswered
+            sessionAnswers[questionText] = 'unanswered';
+            saveSessionData();
+            updateQuizStats();
             return false; // Indicate that no answer was selected
         }
 
@@ -525,8 +620,12 @@
             selectedOption.parentElement.style.backgroundColor = '#e6ffe6';
             selectedOption.parentElement.style.border = '1px solid #27ae60';
             // Remove from wrong answers history if it was there
-            wronglyAnsweredQuestions.delete(question.QuestionText);
+            wronglyAnsweredQuestions.delete(questionText);
             saveWronglyAnsweredQuestions();
+            // Track as correct
+            sessionAnswers[questionText] = 'correct';
+            saveSessionData();
+            updateQuizStats();
             return true; // Indicate correct answer
         } else {
             // FIX: Modified to ONLY show the correct answer here IF the user was wrong
@@ -536,8 +635,13 @@
             selectedOption.parentElement.style.border = '1px solid #e74c3c';
 
             // Add to wrong answers history
-            wronglyAnsweredQuestions.add(question.QuestionText);
+            wronglyAnsweredQuestions.add(questionText);
             saveWronglyAnsweredQuestions();
+
+            // Track as wrong
+            sessionAnswers[questionText] = 'wrong';
+            saveSessionData();
+            updateQuizStats();
 
             // Display explanation if available
             if (question.Explanation) {
@@ -661,6 +765,8 @@
     let allQuizQuestions = []; // Stores all questions from CSV
     let currentQuizQuestions = []; // Stores questions for the current round
     let wronglyAnsweredQuestions = new Set(); // Stores QuestionText of wrongly answered questions
+    let sessionAnswers = {}; // Tracks answers per session: {questionText: 'correct'|'wrong'|'unanswered'}
+    let quizMode = 'retake'; // 'retake' for wrong/unanswered only, 'all' for all questions
 
     // Load settings from Firestore
     async function loadSettings() {
@@ -719,6 +825,72 @@
             errorMessageDiv.textContent = `Error saving settings: ${e.message}`;
             saveSettingsToLocalStorage(); // Fallback
         }
+    }
+
+    // Load session data from Firestore
+    async function loadSessionData() {
+        if (!window.isFirebaseReady || !window.db || !window.currentUserId) {
+            console.log("Firebase not ready for loading session data.");
+            loadSessionDataFromLocalStorage();
+            return;
+        }
+
+        try {
+            const docSnap = await window.getDoc(getUserDocRef(window.currentUserId));
+            if (docSnap.exists() && docSnap.data().sessionAnswers) {
+                sessionAnswers = JSON.parse(docSnap.data().sessionAnswers);
+                console.log("Session data loaded from Firestore.");
+            } else {
+                console.log("No session data found in Firestore. Using empty object.");
+                sessionAnswers = {};
+            }
+        } catch (e) {
+            console.error("Error loading session data from Firestore: ", e);
+            loadSessionDataFromLocalStorage();
+        }
+    }
+
+    // Save session data to Firestore
+    async function saveSessionData() {
+        if (!window.isFirebaseReady || !window.db || !window.currentUserId) {
+            console.warn("Firebase not ready for saving session data. Saving to local storage instead.");
+            saveSessionDataToLocalStorage();
+            return;
+        }
+
+        try {
+            await window.setDoc(getUserDocRef(window.currentUserId), {
+                sessionAnswers: JSON.stringify(sessionAnswers),
+                lastUpdated: new Date()
+            }, { merge: true });
+            console.log("Session data saved to Firestore.");
+        } catch (e) {
+            console.error("Error saving session data to Firestore: ", e);
+            saveSessionDataToLocalStorage();
+        }
+    }
+
+    // Clear session data
+    async function clearSessionData() {
+        sessionAnswers = {};
+        if (!window.isFirebaseReady || !window.db || !window.currentUserId) {
+            console.warn("Firebase not ready for clearing session data. Clearing local storage instead.");
+            clearSessionDataLocalStorage();
+            return;
+        }
+
+        try {
+            await window.updateDoc(getUserDocRef(window.currentUserId), {
+                sessionAnswers: JSON.stringify({})
+            });
+            console.log("Session data cleared from Firestore.");
+            errorMessageDiv.textContent = 'Session data cleared!';
+            setTimeout(() => errorMessageDiv.textContent = '', 3000);
+        } catch (e) {
+            console.error("Error clearing session data from Firestore: ", e);
+            clearSessionDataLocalStorage();
+        }
+        updateQuizStats();
     }
 
     // Load wrong answers from Firestore
@@ -788,14 +960,93 @@
             errorMessageDiv.textContent = `Error clearing history: ${e.message}`;
             clearWrongAnswersHistoryLocalStorage(); // Fallback
         }
+        updateQuizStats();
     }
 
-    // --- Local Storage Fallback Functions (Existing Logic) ---
+    // Update quiz statistics display
+    function updateQuizStats() {
+        if (!allQuizQuestions.length) return;
+
+        let wrongCount = 0;
+        let unansweredCount = 0;
+        let correctCount = 0;
+
+        allQuizQuestions.forEach(question => {
+            const questionText = question.QuestionText;
+            const sessionStatus = sessionAnswers[questionText];
+            
+            if (sessionStatus === 'correct') {
+                correctCount++;
+            } else if (sessionStatus === 'wrong') {
+                wrongCount++;
+            } else if (wronglyAnsweredQuestions.has(questionText)) {
+                wrongCount++;
+            } else {
+                unansweredCount++;
+            }
+        });
+
+        document.getElementById('wrong-count').textContent = wrongCount;
+        document.getElementById('unanswered-count').textContent = unansweredCount;
+        document.getElementById('correct-count').textContent = correctCount;
+    }
+
+    // Toggle quiz mode
+    function toggleQuizMode() {
+        const toggleBtn = document.getElementById('toggle-mode-btn');
+        const congratsPanel = document.getElementById('congratulations-panel');
+        
+        if (quizMode === 'retake') {
+            quizMode = 'all';
+            toggleBtn.textContent = 'Show All Questions';
+            toggleBtn.classList.remove('active');
+            congratsPanel.style.display = 'none';
+        } else {
+            quizMode = 'retake';
+            toggleBtn.textContent = 'Retake Only Wrong/Unanswered';
+            toggleBtn.classList.add('active');
+        }
+        
+        // Reload quiz with new mode
+        loadQuiz();
+    }
+
+    // Check if all questions are correct and show congratulations
+    function checkForCongratulations() {
+        if (!allQuizQuestions.length) return false;
+
+        const wrongAndUnanswered = getWrongAndUnansweredQuestions();
+        if (wrongAndUnanswered.length === 0 && quizMode === 'retake') {
+            document.getElementById('congratulations-panel').style.display = 'block';
+            document.getElementById('quiz-mode-toggle').style.display = 'none';
+            return true;
+        }
+        
+        document.getElementById('congratulations-panel').style.display = 'none';
+        document.getElementById('quiz-mode-toggle').style.display = 'flex';
+        return false;
+    }
+
+    // Get questions that are wrong or unanswered
+    function getWrongAndUnansweredQuestions() {
+        return allQuizQuestions.filter(question => {
+            const questionText = question.QuestionText;
+            const sessionStatus = sessionAnswers[questionText];
+            
+            // Include if wrong in session, unanswered in session, or historically wrong and not corrected
+            return sessionStatus === 'wrong' || 
+                   sessionStatus === 'unanswered' ||
+                   (wronglyAnsweredQuestions.has(questionText) && sessionStatus !== 'correct');
+        });
+    }
+
+    // --- Local Storage Fallback Functions ---
     const LS_NUM_QUESTIONS_KEY = 'quizNumQuestions';
     const LS_ENABLE_TIMER_KEY = 'quizEnableTimer';
     const LS_TIME_LIMIT_KEY = 'quizTimeLimit';
     const LS_WRONG_ANSWERS_KEY = 'quizWrongAnswers';
     const LS_QUIZ_TITLE_KEY = 'quizTitle';
+    const LS_SESSION_ANSWERS_KEY = 'quizSessionAnswers';
 
     function loadSettingsFromLocalStorage() {
         const storedNumQuestions = localStorage.getItem(LS_NUM_QUESTIONS_KEY);
@@ -829,6 +1080,29 @@
         localStorage.setItem(LS_TIME_LIMIT_KEY, timeLimitMinutesInput.value);
         localStorage.setItem(LS_QUIZ_TITLE_KEY, quizTitleInput.value);
         console.log("Settings saved to Local Storage.");
+    }
+
+    function loadSessionDataFromLocalStorage() {
+        const storedSessionData = localStorage.getItem(LS_SESSION_ANSWERS_KEY);
+        if (storedSessionData) {
+            sessionAnswers = JSON.parse(storedSessionData);
+        } else {
+            sessionAnswers = {};
+        }
+        console.log("Session data loaded from Local Storage.");
+    }
+
+    function saveSessionDataToLocalStorage() {
+        localStorage.setItem(LS_SESSION_ANSWERS_KEY, JSON.stringify(sessionAnswers));
+        console.log("Session data saved to Local Storage.");
+    }
+
+    function clearSessionDataLocalStorage() {
+        sessionAnswers = {};
+        localStorage.removeItem(LS_SESSION_ANSWERS_KEY);
+        errorMessageDiv.textContent = 'Session data cleared (Local Storage)!';
+        setTimeout(() => errorMessageDiv.textContent = '', 3000);
+        console.log("Session data cleared from Local Storage.");
     }
 
     function loadWronglyAnsweredQuestionsFromLocalStorage() {
@@ -899,40 +1173,92 @@
                     return;
                 }
 
-                // Determine the number of questions for this round
-                const requestedNum = parseInt(numQuestionsInput.value);
-                const numToPractice = (!isNaN(requestedNum) && requestedNum > 0) ? Math.min(requestedNum, allQuizQuestions.length) : allQuizQuestions.length;
+                // Update quiz statistics
+                updateQuizStats();
 
-                // Prioritize wrongly answered questions
-                let prioritizedQuestions = [];
-                let otherQuestions = [];
-
-                allQuizQuestions.forEach(q => {
-                    if (wronglyAnsweredQuestions.has(q.QuestionText)) {
-                        prioritizedQuestions.push(q);
-                    } else {
-                        otherQuestions.push(q);
-                    }
-                });
-
-                // Shuffle both sets
-                shuffleArray(prioritizedQuestions);
-                shuffleArray(otherQuestions);
-
-                // Build currentQuizQuestions: prioritized first, then random others
-                currentQuizQuestions = [];
-                currentQuizQuestions.push(...prioritizedQuestions.slice(0, numToPractice));
-
-                // Fill remaining slots with other questions if needed
-                const remainingSlots = numToPractice - currentQuizQuestions.length;
-                if (remainingSlots > 0) {
-                    currentQuizQuestions.push(...otherQuestions.slice(0, remainingSlots));
+                // Check for congratulations before loading questions
+                if (checkForCongratulations()) {
+                    questionsContainer.innerHTML = '<p style="text-align: center; font-size: 1.2em; color: #28a745;">🎉 All questions mastered! Use the button above to restart with all questions. 🎉</p>';
+                    quizForm.querySelector('.submit-btn').style.display = 'none';
+                    return;
                 }
 
-                // If somehow we have more questions than requested (due to prioritization logic filling up all slots),
-                // or if `numToPractice` was very small and we had many wrong answers, truncate.
+                // Determine which questions to load based on mode
+                let questionsToLoad;
+                if (quizMode === 'retake') {
+                    questionsToLoad = getWrongAndUnansweredQuestions();
+                    if (questionsToLoad.length === 0) {
+                        checkForCongratulations();
+                        return;
+                    }
+                } else {
+                    questionsToLoad = [...allQuizQuestions];
+                }
+
+                // Determine the number of questions for this round
+                const requestedNum = parseInt(numQuestionsInput.value);
+                const numToPractice = (!isNaN(requestedNum) && requestedNum > 0) ? Math.min(requestedNum, questionsToLoad.length) : questionsToLoad.length;
+
+                // For retake mode, prioritize wrong answers, then unanswered
+                if (quizMode === 'retake') {
+                    let wrongQuestions = [];
+                    let unansweredQuestions = [];
+
+                    questionsToLoad.forEach(q => {
+                        const questionText = q.QuestionText;
+                        const sessionStatus = sessionAnswers[questionText];
+                        
+                        if (sessionStatus === 'wrong' || (wronglyAnsweredQuestions.has(questionText) && sessionStatus !== 'correct')) {
+                            wrongQuestions.push(q);
+                        } else {
+                            unansweredQuestions.push(q);
+                        }
+                    });
+
+                    // Shuffle both sets
+                    shuffleArray(wrongQuestions);
+                    shuffleArray(unansweredQuestions);
+
+                    // Build currentQuizQuestions: wrong first, then unanswered
+                    currentQuizQuestions = [];
+                    currentQuizQuestions.push(...wrongQuestions.slice(0, numToPractice));
+
+                    // Fill remaining slots with unanswered questions if needed
+                    const remainingSlots = numToPractice - currentQuizQuestions.length;
+                    if (remainingSlots > 0) {
+                        currentQuizQuestions.push(...unansweredQuestions.slice(0, remainingSlots));
+                    }
+                } else {
+                    // For 'all' mode, use existing logic
+                    let prioritizedQuestions = [];
+                    let otherQuestions = [];
+
+                    questionsToLoad.forEach(q => {
+                        if (wronglyAnsweredQuestions.has(q.QuestionText)) {
+                            prioritizedQuestions.push(q);
+                        } else {
+                            otherQuestions.push(q);
+                        }
+                    });
+
+                    // Shuffle both sets
+                    shuffleArray(prioritizedQuestions);
+                    shuffleArray(otherQuestions);
+
+                    // Build currentQuizQuestions: prioritized first, then random others
+                    currentQuizQuestions = [];
+                    currentQuizQuestions.push(...prioritizedQuestions.slice(0, numToPractice));
+
+                    // Fill remaining slots with other questions if needed
+                    const remainingSlots = numToPractice - currentQuizQuestions.length;
+                    if (remainingSlots > 0) {
+                        currentQuizQuestions.push(...otherQuestions.slice(0, remainingSlots));
+                    }
+                }
+
+                // Ensure we don't exceed the requested number of questions
                 currentQuizQuestions = currentQuizQuestions.slice(0, numToPractice);
-                shuffleArray(currentQuizQuestions); // Final shuffle to mix prioritized with others
+                shuffleArray(currentQuizQuestions); // Final shuffle
 
                 questionsContainer.innerHTML = currentQuizQuestions.map(createQuestionElement).join('');
                 startTimer(); // Start timer after questions are loaded and rendered
@@ -975,6 +1301,7 @@
             scoreContainer.textContent = `Your score: ${score} out of ${currentQuizQuestions.length}`;
             disableQuizInputs(); // Disable inputs after submission
             saveSettings(); // Save current settings to Firestore
+            updateQuizStats(); // Update statistics after submission
         });
 
         // Handle Retake Quiz button click
@@ -983,8 +1310,22 @@
             loadQuiz(); // Reload the quiz
         });
 
+        // Handle toggle mode button click
+        document.getElementById('toggle-mode-btn').addEventListener('click', toggleQuizMode);
+
+        // Handle restart all button click
+        document.getElementById('restart-all-btn').addEventListener('click', () => {
+            quizMode = 'all';
+            document.getElementById('toggle-mode-btn').textContent = 'Show All Questions';
+            document.getElementById('toggle-mode-btn').classList.remove('active');
+            loadQuiz();
+        });
+
         // Handle clear wrong answers button click
         clearWrongAnswersBtn.addEventListener('click', clearWrongAnswersHistory);
+
+        // Handle clear session data button click
+        document.getElementById('clear-session-data-btn').addEventListener('click', clearSessionData);
 
         // Save settings whenever setting inputs change
         numQuestionsInput.addEventListener('change', saveSettings);
@@ -998,18 +1339,10 @@
                 timerDisplay.style.display = 'none';
             }
         });
-        timeLimitMinutesInput.addEventListener('change', () => {
-            saveSettings();
-            // Re-start timer if setting changes and quiz is not submitted
-            if (enableTimerCheckbox.checked && quizForm.querySelector('.submit-btn').style.display !== 'none') {
-                startTimer();
-            }
-        });
-
-        // Update quiz title when input changes
+        timeLimitMinutesInput.addEventListener('change', saveSettings);
         quizTitleInput.addEventListener('input', () => {
-            quizTitleDisplay.textContent = quizTitleInput.value;
-            document.title = quizTitleInput.value; // Also update browser tab title
+            quizTitleDisplay.textContent = quizTitleInput.value || "Exam Preparation Quiz";
+            document.title = quizTitleInput.value || "Exam Preparation Quiz";
             saveSettings();
         });
     });
