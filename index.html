@@ -3,291 +3,436 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Exam Preparation Quiz</title> <!-- Default title, will be updated by JS -->
+  <title>Exam Preparation Quiz</title>
   <style>
-    /* --- CSS STYLES --- */
+    /* Enhanced CSS with modern design improvements */
+    * {
+      box-sizing: border-box;
+    }
+    
     body {
-      font-family: 'Inter', Arial, sans-serif; /* Using Inter font */
-      margin: 20px;
-      max-width: 800px;
-      line-height: 1.6;
-      color: #333;
-      background-color: #f4f7f6;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
-      min-height: 100vh;
-      box-sizing: border-box;
-      padding-bottom: 50px; /* Add padding for bottom elements */
+      color: #333;
+      line-height: 1.6;
     }
+    
+    .app-container {
+      width: 100%;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    
     h1 {
-      color: #2c3e50;
+      color: white;
       text-align: center;
       margin-bottom: 30px;
-      font-size: 2.2em;
-      border-bottom: 2px solid #3498db;
-      padding-bottom: 10px;
-      width: 100%;
-      max-width: 700px;
+      font-size: 2.5em;
+      font-weight: 700;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.3);
     }
+    
     .quiz-container {
-      background-color: #ffffff;
-      border: 1px solid #ddd;
-      padding: 25px;
-      border-radius: 12px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-      width: 100%;
-      max-width: 700px;
-      box-sizing: border-box;
+      background: white;
+      border-radius: 20px;
+      padding: 30px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.2);
     }
+    
     .settings-panel {
-      background-color: #e9f0f3;
-      padding: 15px;
-      border-radius: 8px;
-      margin-bottom: 25px;
-      border: 1px solid #c9dbe4;
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      padding: 25px;
+      border-radius: 15px;
+      margin-bottom: 30px;
+      border: none;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.06);
     }
-    .settings-panel label {
-        display: block;
-        margin-bottom: 10px;
-        font-weight: bold;
-        color: #34495e;
-    }
-    .settings-panel input[type="number"],
-    .settings-panel input[type="checkbox"],
-    .settings-panel input[type="text"] { /* Added text input style */
-        margin-right: 8px;
-    }
-    .settings-panel input[type="number"] {
-        padding: 5px 8px;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-        width: 80px;
-    }
-    .settings-panel input[type="text"] { /* Style for text input */
-        padding: 5px 8px;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-        width: calc(100% - 100px); /* Adjust width */
-        max-width: 250px;
-    }
-    .settings-panel button {
-        background-color: #e74c3c;
-        color: white;
-        border: none;
-        padding: 8px 12px;
-        border-radius: 5px;
-        cursor: pointer;
-        font-size: 0.9em;
-        transition: background-color 0.2s ease;
-    }
-    .settings-panel button:hover {
-        background-color: #c0392b;
-    }
-    #timer-display {
-        text-align: center;
-        font-size: 1.5em;
-        font-weight: bold;
-        color: #e74c3c;
-        margin-bottom: 20px;
-        padding: 10px;
-        background-color: #fff0f0;
-        border: 1px solid #f0a8a8;
-        border-radius: 8px;
-        display: none; /* Hidden by default, shown when timer is active */
-    }
-    #user-id-display {
-        text-align: center;
-        font-size: 0.9em;
-        margin-top: 15px;
-        padding: 8px;
-        background-color: #f0f4f7;
-        border-radius: 5px;
-        color: #555;
-        word-break: break-all; /* Ensure long IDs wrap */
-    }
-    .question {
-      border-bottom: 1px solid #eee;
+    
+    .settings-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
       margin-bottom: 20px;
-      padding-bottom: 15px;
     }
-    .question:last-of-type {
-      border-bottom: none;
-      margin-bottom: 0;
-      padding-bottom: 0;
+    
+    .setting-group {
+      display: flex;
+      flex-direction: column;
     }
-    .question-title {
+    
+    .settings-panel label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #2c3e50;
+      font-size: 0.9em;
+    }
+    
+    .settings-panel input[type="number"],
+    .settings-panel input[type="text"] {
+      padding: 10px 15px;
+      border: 2px solid #e1e8ed;
+      border-radius: 10px;
+      font-size: 1em;
+      transition: all 0.3s ease;
+      background: white;
+    }
+    
+    .settings-panel input[type="number"]:focus,
+    .settings-panel input[type="text"]:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    
+    .checkbox-group input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+      accent-color: #667eea;
+    }
+    
+    .settings-panel button {
+      background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(238, 90, 36, 0.3);
+    }
+    
+    .settings-panel button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(238, 90, 36, 0.4);
+    }
+    
+    #timer-display {
+      text-align: center;
+      font-size: 1.8em;
       font-weight: bold;
-      margin-bottom: 12px;
-      font-size: 1.1em;
-      color: #34495e;
+      color: #e74c3c;
+      margin-bottom: 25px;
+      padding: 15px;
+      background: linear-gradient(135deg, #fff5f5 0%, #fed7d7 100%);
+      border: 2px solid #fc8181;
+      border-radius: 15px;
+      display: none;
     }
+    
+    #user-id-display {
+      text-align: center;
+      font-size: 0.85em;
+      margin-bottom: 20px;
+      padding: 10px;
+      background: linear-gradient(135deg, #f0f4f7 0%, #d6eaf8 100%);
+      border-radius: 10px;
+      color: #555;
+      word-break: break-all;
+    }
+    
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      background: #e1e8ed;
+      border-radius: 4px;
+      margin-bottom: 30px;
+      overflow: hidden;
+    }
+    
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+    
+    .question {
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+      border-radius: 15px;
+      margin-bottom: 25px;
+      padding: 25px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+      transition: transform 0.2s ease;
+    }
+    
+    .question:hover {
+      transform: translateY(-2px);
+    }
+    
+    .question-title {
+      font-weight: 700;
+      margin-bottom: 20px;
+      font-size: 1.2em;
+      color: #2c3e50;
+      line-height: 1.4;
+    }
+    
+    .options {
+      display: grid;
+      gap: 12px;
+    }
+    
     .options label {
       display: flex;
       align-items: center;
-      margin-bottom: 8px;
-      cursor: pointer;
-      padding: 10px 15px;
-      border-radius: 6px;
-      transition: background-color 0.2s ease, transform 0.1s ease;
-      border: 1px solid #e0e0e0;
-    }
-    .options label:hover {
-      background-color: #f5f8ff;
-      transform: translateY(-2px);
-    }
-    .options input[type="radio"] {
-      margin-right: 12px;
-      transform: scale(1.2);
-    }
-    .question-actions {
-        display: flex;
-        justify-content: flex-end;
-        margin-top: 10px;
-    }
-    .validate-btn {
-      padding: 8px 15px;
-      font-size: 0.9em;
-      background-color: #83c1e2;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      margin-left: 10px;
-      transition: background-color 0.2s ease, transform 0.1s ease;
-    }
-    .validate-btn:hover {
-      background-color: #61a7d6;
-      transform: translateY(-1px);
-    }
-    .submit-btn, .retake-btn {
-      display: block;
-      width: 100%;
       padding: 15px 20px;
-      font-size: 1.2em;
-      background-color: #3498db;
+      cursor: pointer;
+      border: 2px solid #e1e8ed;
+      border-radius: 12px;
+      transition: all 0.3s ease;
+      background: white;
+      font-weight: 500;
+    }
+    
+    .options label:hover {
+      border-color: #667eea;
+      background: linear-gradient(135deg, #f0f4ff 0%, #e6eeff 100%);
+      transform: translateX(5px);
+    }
+    
+    .options input[type="radio"] {
+      width: 20px;
+      height: 20px;
+      margin-right: 15px;
+      accent-color: #667eea;
+    }
+    
+    .question-actions {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 20px;
+    }
+    
+    .validate-btn {
+      padding: 10px 20px;
+      background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
       color: white;
       border: none;
-      border-radius: 8px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+    }
+    
+    .validate-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
+    }
+    
+    .submit-btn, .retake-btn {
+      width: 100%;
+      padding: 18px 25px;
+      font-size: 1.3em;
+      font-weight: 700;
+      border: none;
+      border-radius: 15px;
       cursor: pointer;
       margin-top: 30px;
-      transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease;
-      box-shadow: 0 4px 10px rgba(52, 152, 219, 0.3);
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 1px;
     }
-    .submit-btn:hover, .retake-btn:hover {
-      background-color: #2980b9;
-      transform: translateY(-2px);
-      box-shadow: 0 6px 15px rgba(41, 128, 185, 0.4);
+    
+    .submit-btn {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
     }
+    
+    .submit-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 35px rgba(102, 126, 234, 0.4);
+    }
+    
     .retake-btn {
-        background-color: #2ecc71; /* Green for retake */
-        box-shadow: 0 4px 10px rgba(46, 204, 113, 0.3);
-        display: none; /* Hidden by default */
+      background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+      color: white;
+      box-shadow: 0 8px 25px rgba(46, 204, 113, 0.3);
+      display: none;
     }
+    
     .retake-btn:hover {
-        background-color: #27ae60;
-        box-shadow: 0 6px 15px rgba(39, 174, 96, 0.4);
+      transform: translateY(-3px);
+      box-shadow: 0 12px 35px rgba(46, 204, 113, 0.4);
     }
+    
     .result {
-      margin-top: 10px;
-      font-weight: bold;
-      padding: 8px 15px;
-      border-radius: 6px;
-      text-align: center;
-      font-size: 0.95em;
-    }
-    .correct {
-      color: #27ae60;
-      background-color: #e6ffe6;
-      border: 1px solid #a8e6a8;
-    }
-    .wrong {
-      color: #e74c3c;
-      background-color: #ffe6e6;
-      border: 1px solid #f0a8a8;
-    }
-    .explanation {
-      margin-top: 10px;
-      padding: 10px 15px;
-      background-color: #f0f8ff; /* Light blue background for explanation */
-      border: 1px solid #aed6f1; /* Border for explanation */
-      border-radius: 6px;
-      font-size: 0.9em;
-      color: #2c3e50;
-      line-height: 1.5;
-      display: none; /* Hidden by default */
-    }
-    .score-container {
-      margin-top: 40px;
-      padding: 20px;
-      background-color: #ecf0f1;
+      margin-top: 15px;
+      font-weight: 600;
+      padding: 12px 20px;
       border-radius: 10px;
       text-align: center;
-      font-size: 1.3em;
-      font-weight: bold;
+      font-size: 1em;
+    }
+    
+    .correct {
+      color: #27ae60;
+      background: linear-gradient(135deg, #d5f4e6 0%, #a8e6a8 100%);
+      border: 2px solid #27ae60;
+    }
+    
+    .wrong {
+      color: #e74c3c;
+      background: linear-gradient(135deg, #fdf2f2 0%, #fed7d7 100%);
+      border: 2px solid #e74c3c;
+    }
+    
+    .explanation {
+      margin-top: 15px;
+      padding: 15px 20px;
+      background: linear-gradient(135deg, #f0f8ff 0%, #e6f3ff 100%);
+      border: 2px solid #3498db;
+      border-radius: 10px;
+      font-size: 0.95em;
       color: #2c3e50;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+      line-height: 1.6;
+      display: none;
     }
+    
+    .score-container {
+      margin-top: 40px;
+      padding: 30px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 20px;
+      text-align: center;
+      font-size: 1.5em;
+      font-weight: 700;
+      color: white;
+      box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+    }
+    
     .error-message {
-        color: #c0392b;
-        font-weight: bold;
-        text-align: center;
-        margin-top: 20px;
-        padding: 15px;
-        background-color: #fbecec;
-        border: 1px solid #e74c3c;
-        border-radius: 8px;
+      color: #e74c3c;
+      font-weight: 600;
+      text-align: center;
+      margin-top: 20px;
+      padding: 15px 20px;
+      background: linear-gradient(135deg, #fdf2f2 0%, #fed7d7 100%);
+      border: 2px solid #e74c3c;
+      border-radius: 10px;
     }
-    .options input[type="radio"]:disabled + span {
-      cursor: not-allowed;
-      opacity: 0.7;
+    
+    .loading-spinner {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #667eea;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-right: 10px;
     }
-    .options label:has(input[type="radio"]:disabled) {
-        cursor: not-allowed;
-        background-color: #f0f0f0; /* Grey out disabled options */
-        transform: none; /* No hover effect on disabled */
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
     }
-
-    /* Responsive adjustments */
-    @media (max-width: 600px) {
-        body {
-            margin: 10px;
-        }
-        h1 {
-            font-size: 1.8em;
-            margin-bottom: 20px;
-            padding-bottom: 8px;
-        }
-        .quiz-container {
-            padding: 15px;
-            border-radius: 8px;
-        }
-        .submit-btn, .retake-btn {
-            font-size: 1.1em;
-            padding: 12px 15px;
-        }
-        .score-container {
-            font-size: 1.1em;
-            padding: 15px;
-        }
-        .options label {
-            padding: 8px 10px;
-        }
+    
+    .stats-panel {
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+      padding: 20px;
+      border-radius: 15px;
+      margin-bottom: 20px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 15px;
+    }
+    
+    .stat-item {
+      text-align: center;
+      padding: 15px;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    
+    .stat-value {
+      font-size: 1.5em;
+      font-weight: 700;
+      color: #667eea;
+    }
+    
+    .stat-label {
+      font-size: 0.9em;
+      color: #666;
+      margin-top: 5px;
+    }
+    
+    /* Responsive improvements */
+    @media (max-width: 768px) {
+      body {
+        padding: 10px;
+      }
+      
+      h1 {
+        font-size: 2em;
+      }
+      
+      .quiz-container {
+        padding: 20px;
+        border-radius: 15px;
+      }
+      
+      .settings-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+      }
+      
+      .question {
+        padding: 20px;
+      }
+      
+      .options label {
+        padding: 12px 15px;
+      }
+      
+      .submit-btn, .retake-btn {
+        font-size: 1.1em;
+        padding: 15px 20px;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      .options label:hover {
+        transform: none;
+      }
+      
+      .question:hover {
+        transform: none;
+      }
     }
   </style>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
-  <!-- Firebase SDK Imports -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
     import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-    // Global Firebase variables (to be used by the main script)
+    // Global Firebase variables
     window.firebaseApp = null;
     window.db = null;
     window.auth = null;
     window.currentUserId = null;
-    window.isFirebaseReady = false; // Flag to indicate Firebase is initialized and authenticated
+    window.isFirebaseReady = false;
 
     // Expose Firestore functions globally
     window.doc = doc;
@@ -297,9 +442,8 @@
     window.collection = collection;
     window.deleteDoc = deleteDoc;
 
-
     document.addEventListener('DOMContentLoaded', async () => {
-        // Manually inserted Firebase config for local testing or specific environments
+        // Firebase configuration
         const firebaseConfig = {
           apiKey: "AIzaSyCmlSLhRNeOrEG4aT9t-JK20QAjzpdELVc",
           authDomain: "studybuddy-58e84.firebaseapp.com",
@@ -310,709 +454,329 @@
           measurementId: "G-0K69MEBD6Q"
         };
         window.firebaseConfig = firebaseConfig;
-        // For consistency, set appId using projectId for Firestore paths
-        const appId = firebaseConfig.projectId; // This will be "studybuddy-58e84"
 
+        try {
+            // Initialize Firebase
+            window.firebaseApp = initializeApp(firebaseConfig);
+            window.db = getFirestore(window.firebaseApp);
+            window.auth = getAuth(window.firebaseApp);
 
-        // Initialize Firebase
-        window.firebaseApp = initializeApp(firebaseConfig);
-        window.db = getFirestore(window.firebaseApp);
-        window.auth = getAuth(window.firebaseApp);
+            // Enhanced authentication with retry logic
+            let authAttempts = 0;
+            const maxAuthAttempts = 3;
+            
+            const attemptAuth = async () => {
+                try {
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(window.auth, __initial_auth_token);
+                        console.log("✅ Signed in with custom token");
+                    } else {
+                        await signInAnonymously(window.auth);
+                        console.log("✅ Signed in anonymously");
+                    }
+                } catch (error) {
+                    authAttempts++;
+                    console.error(`❌ Authentication attempt ${authAttempts} failed:`, error);
+                    
+                    if (authAttempts < maxAuthAttempts) {
+                        document.getElementById('error-message').textContent = `Authentication failed (attempt ${authAttempts}/${maxAuthAttempts}). Retrying...`;
+                        setTimeout(attemptAuth, 2000);
+                    } else {
+                        document.getElementById('error-message').textContent = `Authentication failed after ${maxAuthAttempts} attempts. Please refresh the page.`;
+                    }
+                }
+            };
 
-        // Sign in anonymously if no auth token is provided or user is not signed in
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-            try {
-                await signInWithCustomToken(window.auth, __initial_auth_token);
-                console.log("Signed in with custom token.");
-            } catch (error) {
-                console.error("Error signing in with custom token:", error);
-                document.getElementById('error-message').textContent = `Authentication error: ${error.message}. Attempting anonymous sign-in...`;
-                await signInAnonymously(window.auth); // Fallback to anonymous
-            }
-        } else {
-            await signInAnonymously(window.auth);
-            console.log("Signed in anonymously.");
+            await attemptAuth();
+
+            // Listen for auth state changes
+            onAuthStateChanged(window.auth, (user) => {
+                if (user) {
+                    window.currentUserId = user.uid;
+                    document.getElementById('user-id-display').innerHTML = `
+                        <strong>User ID:</strong> ${window.currentUserId.substring(0, 8)}...
+                    `;
+                    window.isFirebaseReady = true;
+                    console.log("🔥 Firebase ready with user:", window.currentUserId);
+                    window.loadSettingsAndQuiz();
+                } else {
+                    window.currentUserId = null;
+                    document.getElementById('user-id-display').textContent = '❌ Not authenticated';
+                    window.isFirebaseReady = false;
+                }
+            });
+        } catch (error) {
+            console.error("❌ Firebase initialization failed:", error);
+            document.getElementById('error-message').textContent = `Firebase initialization failed: ${error.message}`;
         }
-
-        // Listen for auth state changes
-        onAuthStateChanged(window.auth, (user) => {
-            if (user) {
-                window.currentUserId = user.uid;
-                document.getElementById('user-id-display').textContent = `Your User ID: ${window.currentUserId}`;
-                window.isFirebaseReady = true;
-                console.log("Firebase and user ID ready:", window.currentUserId);
-                // Now that Firebase is ready, load quiz settings and questions
-                // This function is defined in the second script block.
-                window.loadSettingsAndQuiz();
-            } else {
-                window.currentUserId = null;
-                document.getElementById('user-id-display').textContent = 'Not signed in.';
-                window.isFirebaseReady = false;
-                console.log("User signed out.");
-                // Potentially disable quiz if not signed in and data persistence is critical
-            }
-        });
     });
   </script>
 </head>
 <body>
-  <h1 id="quiz-title-display">Exam Preparation Quiz</h1> <!-- Dynamic title display -->
-  <div class="quiz-container">
-    <div class="settings-panel">
-        <label for="quiz-title-input">Quiz Title:</label>
-        <input type="text" id="quiz-title-input" placeholder="e.g., My Biology Exam Prep" value="General Exam Preparation Quiz">
-        <br><br>
-        <label for="num-questions">Number of Questions to Practice (leave blank for all):</label>
-        <input type="number" id="num-questions" min="1" placeholder="All" value="10">
-        <br><br>
-        <label>
-            <input type="checkbox" id="enable-timer-checkbox"> Enable Timer
-        </label>
-        <label for="time-limit-minutes" style="margin-top: 5px;">Time Limit (minutes):</label>
-        <input type="number" id="time-limit-minutes" min="1" value="10">
-        <br><br>
-        <button type="button" id="clear-wrong-answers-btn">Clear Wrong Answers History</button>
+  <div class="app-container">
+    <h1 id="quiz-title-display">📚 Exam Preparation Quiz</h1>
+    
+    <div class="quiz-container">
+      <div class="settings-panel">
+        <div class="settings-grid">
+          <div class="setting-group">
+            <label for="quiz-title-input">📝 Quiz Title:</label>
+            <input type="text" id="quiz-title-input" placeholder="My Biology Exam Prep" value="General Exam Preparation Quiz">
+          </div>
+          
+          <div class="setting-group">
+            <label for="num-questions">🔢 Number of Questions:</label>
+            <input type="number" id="num-questions" min="1" placeholder="All questions" value="10">
+          </div>
+          
+          <div class="setting-group">
+            <div class="checkbox-group">
+              <input type="checkbox" id="enable-timer-checkbox">
+              <label for="enable-timer-checkbox">⏰ Enable Timer</label>
+            </div>
+            <label for="time-limit-minutes">⏱️ Time Limit (minutes):</label>
+            <input type="number" id="time-limit-minutes" min="1" value="10">
+          </div>
+        </div>
+        
+        <button type="button" id="clear-wrong-answers-btn">🗑️ Clear Wrong Answers History</button>
+      </div>
+
+      <div class="stats-panel" id="stats-panel" style="display: none;">
+        <div class="stat-item">
+          <div class="stat-value" id="total-questions-stat">0</div>
+          <div class="stat-label">Total Questions</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="wrong-answers-stat">0</div>
+          <div class="stat-label">Wrong Answers</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="completion-rate-stat">0%</div>
+          <div class="stat-label">Completion Rate</div>
+        </div>
+      </div>
+
+      <div class="progress-bar" id="progress-bar" style="display: none;">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+
+      <div id="timer-display"></div>
+      <div id="user-id-display">🔐 Authenticating...</div>
+
+      <form id="quiz-form">
+        <div id="questions-container">
+          <div class="loading-spinner"></div>
+          Loading questions...
+        </div>
+        <button type="submit" class="submit-btn">📤 Submit Answers</button>
+        <button type="button" id="retake-quiz-btn" class="retake-btn">🔄 Retake Quiz</button>
+      </form>
+      
+      <div id="score-container" class="score-container"></div>
+      <div id="error-message" class="error-message"></div>
     </div>
-
-    <div id="timer-display"></div>
-    <div id="user-id-display">Authenticating...</div> <!-- Display User ID -->
-
-    <form id="quiz-form">
-      <div id="questions-container">Loading questions...</div>
-      <button type="submit" class="submit-btn">Submit Answers</button>
-      <button type="button" id="retake-quiz-btn" class="retake-btn">Retake Quiz</button>
-    </form>
-    <div id="score-container" class="score-container"></div>
-    <div id="error-message" class="error-message"></div>
   </div>
 
   <script type="text/javascript">
-    /* --- JAVASCRIPT LOGIC (AFTER FIREBASE INITIALIZATION) --- */
-
-    // Check if Firebase is ready before running the main logic
-    // This function will be called by the Firebase script once authentication is complete
+    // Enhanced JavaScript with improved functionality
+    
     window.loadSettingsAndQuiz = async function() {
         if (!window.isFirebaseReady || !window.db || !window.currentUserId) {
-            console.warn("Firebase not ready yet, deferring quiz load.");
+            console.warn("⚠️ Firebase not ready yet, deferring quiz load.");
             document.getElementById('error-message').textContent = 'Waiting for authentication...';
             return;
         }
-        document.getElementById('error-message').textContent = ''; // Clear previous auth warning
-
-        // FIX: Ensure loadWronglyAnsweredQuestions and loadSettings are awaited before loadQuiz
-        await loadWronglyAnsweredQuestions(); // Load wrong answers history from Firestore
-        await loadSettings(); // Load user settings from Firestore (needs await)
-        loadQuiz(); // Proceed with quiz questions load
+        
+        document.getElementById('error-message').textContent = '';
+        
+        try {
+            await Promise.all([
+                loadWronglyAnsweredQuestions(),
+                loadSettings(),
+                loadQuizStats()
+            ]);
+            loadQuiz();
+        } catch (error) {
+            console.error("❌ Error loading quiz data:", error);
+            document.getElementById('error-message').textContent = `Error loading quiz: ${error.message}`;
+        }
     };
 
-    /**
-     * Shuffles an array in place using the Fisher-Yates (Knuth) algorithm.
-     * @param {Array} array - The array to shuffle.
-     */
+    // Enhanced shuffle function with better randomization
     function shuffleArray(array) {
-        for (let i = array.length - 1; i > 0; i--) {
+        const shuffled = [...array];
+        for (let i = shuffled.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
-            [array[i], array[j]] = [array[j], array[i]]; // Swap elements
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
         }
+        return shuffled;
     }
 
-    /**
-     * Parses CSV text into an array of objects.
-     * Assumes the first line is headers and handles quoted fields with commas.
-     * @param {string} text - The CSV string.
-     * @returns {Array<Object>} An array of objects, each representing a row.
-     */
+    // Enhanced CSV parser with better error handling
     function parseCSV(text) {
-      const lines = text.trim().split('\n');
-      if (lines.length === 0) {
-        return [];
-      }
+        const lines = text.trim().split('\n');
+        if (lines.length === 0) return [];
 
-      const headers = lines[0].split(',').map(header => header.trim());
-      // Validate headers to ensure required columns exist
-      const requiredHeaders = ["QuestionText", "OptionA", "OptionB", "OptionC", "OptionD", "Answer", "Explanation"];
-      const missingHeaders = requiredHeaders.filter(h => !headers.includes(h));
-      if (missingHeaders.length > 0) {
-          throw new Error(`Missing required CSV headers: ${missingHeaders.join(', ')}. Please check your questions.csv file.`);
-      }
-
-      return lines.slice(1).map(line => {
-        // Use a regex to split by comma, but not if inside double quotes
-        const values = line.split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/).map(v => v.replace(/^"|"$/g, '').trim());
-
-        if (values.length !== headers.length) {
-            console.warn(`Skipping malformed row: "${line}" - Mismatched columns. Expected ${headers.length}, got ${values.length}. Line: "${line}"`);
-            return null; // Skip this row
+        const headers = lines[0].split(',').map(header => header.trim().replace(/^"|"$/g, ''));
+        const requiredHeaders = ["QuestionText", "OptionA", "OptionB", "OptionC", "OptionD", "Answer", "Explanation"];
+        const missingHeaders = requiredHeaders.filter(h => !headers.includes(h));
+        
+        if (missingHeaders.length > 0) {
+            throw new Error(`❌ Missing required CSV headers: ${missingHeaders.join(', ')}`);
         }
 
-        return headers.reduce((obj, h, i) => {
-          obj[h] = values[i];
-          return obj;
-        }, {});
-      }).filter(row => row !== null); // Filter out any null rows (malformed)
+        return lines.slice(1).map((line, index) => {
+            try {
+                const values = line.split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/)
+                    .map(v => v.replace(/^"|"$/g, '').trim());
+
+                if (values.length !== headers.length) {
+                    console.warn(`⚠️ Skipping malformed row ${index + 2}: Expected ${headers.length} columns, got ${values.length}`);
+                    return null;
+                }
+
+                return headers.reduce((obj, header, i) => {
+                    obj[header] = values[i];
+                    return obj;
+                }, {});
+            } catch (error) {
+                console.warn(`⚠️ Error parsing row ${index + 2}:`, error);
+                return null;
+            }
+        }).filter(row => row !== null);
     }
 
-    /**
-     * Generates the HTML for a single quiz question.
-     * @param {Object} question - The question object from the CSV data.
-     * @param {number} index - The index of the question.
-     * @returns {string} The HTML string for the question.
-     */
+    // Enhanced question element creation with accessibility improvements
     function createQuestionElement(question, index) {
-      // Ensure all options are available, default to empty string if missing
-      const options = {
-        A: question.OptionA || '',
-        B: question.OptionB || '',
-        C: question.OptionC || '',
-        D: question.OptionD || ''
-      };
+        const options = {
+            A: question.OptionA || '',
+            B: question.OptionB || '',
+            C: question.OptionC || '',
+            D: question.OptionD || ''
+        };
 
-      return `
-        <div class="question" data-question-index="${index}">
-          <div class="question-title">${index + 1}. ${question.QuestionText || 'No Question Text'}</div>
-          <div class="options">
-            ${Object.entries(options).map(([key, value]) => `
-              <label>
-                <input type="radio" name="q${index}" value="${key}" /> <span>${key}. ${value}</span>
-              </label>
-            `).join('')}
-          </div>
-          <div class="result" id="result-q${index}"></div>
-          <div class="explanation" id="explanation-q${index}"></div> <!-- Added explanation div -->
-          <div class="question-actions">
-            <button type="button" class="validate-btn" data-question-index="${index}">Validate Answer</button>
-          </div>
-        </div>
-      `;
+        return `
+            <div class="question" data-question-index="${index}" role="group" aria-labelledby="question-${index}-title">
+                <div class="question-title" id="question-${index}-title">
+                    ${index + 1}. ${question.QuestionText || 'No Question Text'}
+                </div>
+                <div class="options" role="radiogroup" aria-labelledby="question-${index}-title">
+                    ${Object.entries(options).map(([key, value]) => `
+                        <label for="q${index}-${key}">
+                            <input type="radio" name="q${index}" value="${key}" id="q${index}-${key}" aria-describedby="question-${index}-title" />
+                            <span>${key}. ${value}</span>
+                        </label>
+                    `).join('')}
+                </div>
+                <div class="result" id="result-q${index}" role="status" aria-live="polite"></div>
+                <div class="explanation" id="explanation-q${index}" role="note"></div>
+                <div class="question-actions">
+                    <button type="button" class="validate-btn" data-question-index="${index}" aria-label="Validate answer for question ${index + 1}">
+                        ✅ Validate Answer
+                    </button>
+                </div>
+            </div>
+        `;
     }
 
-    /**
-     * Validates a single question based on user selection and updates UI.
-     * @param {number} index - The index of the question to validate.
-     * @returns {boolean} True if the answer is correct, false otherwise or if no answer selected.
-     */
+    // Enhanced validation with better feedback
     function validateSingleQuestion(index) {
-        const question = currentQuizQuestions[index]; // Use currentQuizQuestions
+        const question = currentQuizQuestions[index];
         const selectedOption = quizForm.querySelector(`input[name="q${index}"]:checked`);
         const resultElement = document.getElementById(`result-q${index}`);
-        const explanationElement = document.getElementById(`explanation-q${index}`); // Get explanation element
+        const explanationElement = document.getElementById(`explanation-q${index}`);
         const questionDiv = document.querySelector(`.question[data-question-index="${index}"]`);
 
-        // Clear previous feedback styles
+        // Reset UI
         resultElement.textContent = '';
-        resultElement.className = 'result'; // Reset classes for result message
-        explanationElement.textContent = ''; // Clear previous explanation
-        explanationElement.style.display = 'none'; // Hide explanation by default
-
-        // Remove previous highlight from options for this question
+        resultElement.className = 'result';
+        explanationElement.textContent = '';
+        explanationElement.style.display = 'none';
+        
         questionDiv.querySelectorAll('label').forEach(label => {
-            label.style.backgroundColor = ''; // Clear background
-            label.style.border = '1px solid #e0e0e0'; // Reset border
+            label.style.backgroundColor = '';
+            label.style.border = '2px solid #e1e8ed';
+            label.style.transform = '';
         });
 
         if (!selectedOption) {
-            resultElement.textContent = 'Please select an answer for this question.';
+            resultElement.textContent = '⚠️ Please select an answer for this question.';
             resultElement.classList.add('wrong');
-            return false; // Indicate that no answer was selected
+            return false;
         }
 
         const selectedValue = selectedOption.value;
         const correctAnswer = question.Answer;
 
         if (selectedValue === correctAnswer) {
-            resultElement.textContent = 'Correct! 🎉';
+            resultElement.textContent = '🎉 Correct! Well done!';
             resultElement.classList.add('correct');
-            selectedOption.parentElement.style.backgroundColor = '#e6ffe6';
-            selectedOption.parentElement.style.border = '1px solid #27ae60';
-            // Remove from wrong answers history if it was there
+            selectedOption.parentElement.style.background = 'linear-gradient(135deg, #d5f4e6 0%, #a8e6a8 100%)';
+            selectedOption.parentElement.style.border = '2px solid #27ae60';
+            selectedOption.parentElement.style.transform = 'scale(1.02)';
+            
             wronglyAnsweredQuestions.delete(question.QuestionText);
             saveWronglyAnsweredQuestions();
-            return true; // Indicate correct answer
+            updateProgress();
+            return true;
         } else {
-            // FIX: Modified to ONLY show the correct answer here IF the user was wrong
-            resultElement.textContent = `Wrong! The correct answer was ${correctAnswer}.`;
+            resultElement.textContent = `❌ Incorrect. The correct answer is ${correctAnswer}.`;
             resultElement.classList.add('wrong');
-            selectedOption.parentElement.style.backgroundColor = '#ffe6e6';
-            selectedOption.parentElement.style.border = '1px solid #e74c3c';
+            selectedOption.parentElement.style.background = 'linear-gradient(135deg, #fdf2f2 0%, #fed7d7 100%)';
+            selectedOption.parentElement.style.border = '2px solid #e74c3c';
 
-            // Add to wrong answers history
             wronglyAnsweredQuestions.add(question.QuestionText);
             saveWronglyAnsweredQuestions();
 
-            // Display explanation if available
             if (question.Explanation) {
-                explanationElement.textContent = `Explanation: ${question.Explanation}`;
-                explanationElement.style.display = 'block'; // Show explanation
+                explanationElement.textContent = `💡 Explanation: ${question.Explanation}`;
+                explanationElement.style.display = 'block';
             }
 
-            // Highlight the actual correct answer if it exists
+            // Highlight correct answer
             const correctLabel = quizForm.querySelector(`input[name="q${index}"][value="${correctAnswer}"]`);
             if (correctLabel) {
-                correctLabel.parentElement.style.backgroundColor = '#d4edda';
-                correctLabel.parentElement.style.border = '1px solid #27ae60';
+                correctLabel.parentElement.style.background = 'linear-gradient(135deg, #d5f4e6 0%, #a8e6a8 100%)';
+                correctLabel.parentElement.style.border = '2px solid #27ae60';
             }
-            return false; // Indicate incorrect answer
+            
+            updateProgress();
+            return false;
         }
     }
 
-    /**
-     * Disables all radio buttons and validate/submit buttons.
-     */
-    function disableQuizInputs() {
-        clearInterval(timerInterval); // Stop timer
-        quizForm.querySelectorAll('input[type="radio"]').forEach(input => {
-            input.disabled = true;
-        });
-        quizForm.querySelector('.submit-btn').style.display = 'none'; // Hide submit button
-        quizForm.querySelectorAll('.validate-btn').forEach(btn => {
-            btn.disabled = true;
-            btn.style.opacity = 0.5;
-            btn.style.cursor = 'not-allowed';
-        });
-        document.getElementById('retake-quiz-btn').style.display = 'block'; // Show retake button
-    }
-
-    /**
-     * Enables all radio buttons and validate/submit buttons, clears feedback.
-     */
-    function enableQuizInputs() {
-        clearInterval(timerInterval); // Ensure any running timer is stopped
-        timerDisplay.style.display = 'none'; // Hide timer display
-
-        quizForm.querySelectorAll('input[type="radio"]').forEach(input => {
-            input.disabled = false;
-            input.checked = false; // Uncheck all
-        });
-        quizForm.querySelector('.submit-btn').style.display = 'block'; // Show submit button
-        quizForm.querySelectorAll('.validate-btn').forEach(btn => {
-            btn.disabled = false;
-            btn.style.opacity = 1;
-            btn.style.cursor = 'pointer';
-        });
-        document.getElementById('retake-quiz-btn').style.display = 'none'; // Hide retake button
-        scoreContainer.textContent = ''; // Clear score
-        errorMessageDiv.textContent = ''; // Clear error message
-
-        // Clear all question specific feedback
-        document.querySelectorAll('.question').forEach(qDiv => {
-            qDiv.querySelector('.result').textContent = '';
-            qDiv.querySelector('.result').className = 'result';
-            qDiv.querySelector('.explanation').textContent = '';
-            qDiv.querySelector('.explanation').style.display = 'none';
-            qDiv.querySelectorAll('label').forEach(label => {
-                label.style.backgroundColor = '';
-                label.style.border = '1px solid #e0e0e0';
-            });
-        });
-    }
-
-    // --- Timer Functions ---
-    let timerInterval;
-    let timeRemaining; // in seconds
-
-    function startTimer() {
-        const enableTimer = enableTimerCheckbox.checked;
-        const timeLimitMinutes = parseInt(timeLimitMinutesInput.value);
-
-        clearInterval(timerInterval); // Clear any existing timer
-
-        if (enableTimer && !isNaN(timeLimitMinutes) && timeLimitMinutes > 0) {
-            timeRemaining = timeLimitMinutes * 60;
-            timerDisplay.style.display = 'block';
-            updateTimerDisplay(); // Initial display
-
-            timerInterval = setInterval(() => {
-                timeRemaining--;
-                updateTimerDisplay();
-                if (timeRemaining <= 0) {
-                    clearInterval(timerInterval);
-                    timerDisplay.textContent = 'Time Up!';
-                    quizForm.dispatchEvent(new Event('submit')); // Auto-submit quiz
-                    // Optionally, show a modal or alert for time up
-                }
-            }, 1000);
-        } else {
-            timerDisplay.style.display = 'none';
+    // Progress tracking
+    function updateProgress() {
+        const totalQuestions = currentQuizQuestions.length;
+        const answeredQuestions = quizForm.querySelectorAll('input[type="radio"]:checked').length;
+        const progressPercentage = totalQuestions > 0 ? (answeredQuestions / totalQuestions) * 100 : 0;
+        
+        const progressBar = document.getElementById('progress-bar');
+        const progressFill = document.getElementById('progress-fill');
+        
+        if (answeredQuestions > 0) {
+            progressBar.style.display = 'block';
+            progressFill.style.width = `${progressPercentage}%`;
         }
+        
+        updateQuizStats();
     }
 
-    function updateTimerDisplay() {
-        const minutes = Math.floor(timeRemaining / 60);
-        const seconds = timeRemaining % 60;
-        timerDisplay.textContent = `Time Remaining: ${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-        if (timeRemaining <= 30 && timeRemaining > 0) { // 30 seconds warning
-            timerDisplay.style.color = '#ff6347'; /* Tomato */
-        } else if (timeRemaining <= 0) {
-            timerDisplay.style.color = '#c0392b'; /* Dark Red */
-        } else {
-            timerDisplay.style.color = '#e74c3c'; /* Original Red */
-        }
-    }
-
-
-    // --- Firebase Data Operations ---
-    // Collection for user-specific data
-    function getUserDocRef(userId) {
-        // Use the hardcoded appId from the config
-        const appId = firebaseConfig.projectId; // Now directly from the hardcoded config
-        return window.doc(window.db, 'artifacts', appId, 'users', userId, 'quizData', 'userSettings');
-    }
-
-    let allQuizQuestions = []; // Stores all questions from CSV
-    let currentQuizQuestions = []; // Stores questions for the current round
-    let wronglyAnsweredQuestions = new Set(); // Stores QuestionText of wrongly answered questions
-
-    // Load settings from Firestore
-    async function loadSettings() {
-        if (!window.isFirebaseReady || !window.db || !window.currentUserId) {
-            console.log("Firebase not ready for loading settings.");
-            // Fallback to local storage if Firebase is not ready
-            loadSettingsFromLocalStorage();
-            return;
-        }
-
+    // Enhanced quiz statistics
+    async function loadQuizStats() {
+        const statsPanel = document.getElementById('stats-panel');
+        const totalQuestionsEl = document.getElementById('total-questions-stat');
+        const wrongAnswersEl = document.getElementById('wrong-answers-stat');
+        const completionRateEl = document.getElementById('completion-rate-stat');
+        
         try {
-            const docSnap = await window.getDoc(getUserDocRef(window.currentUserId));
-            if (docSnap.exists()) {
-                const data = docSnap.data();
-                numQuestionsInput.value = data.numQuestions || '';
-                enableTimerCheckbox.checked = data.enableTimer || false;
-                timeLimitMinutesInput.value = data.timeLimitMinutes || 10;
-                quizTitleInput.value = data.quizTitle || "General Exam Preparation Quiz";
-
-                quizTitleDisplay.textContent = quizTitleInput.value;
-                document.title = quizTitleInput.value;
-                console.log("Settings loaded from Firestore.");
-            } else {
-                console.log("No settings found in Firestore for this user. Using defaults.");
-                // Load from local storage if no settings in Firestore (e.g., first time using Firestore)
-                loadSettingsFromLocalStorage();
-            }
-        } catch (e) {
-            console.error("Error loading settings from Firestore: ", e);
-            errorMessageDiv.textContent = `Error loading settings: ${e.message}`;
-            // Fallback to local storage on error
-            loadSettingsFromLocalStorage();
-        }
-    }
-
-    // Save settings to Firestore
-    async function saveSettings() {
-        if (!window.isFirebaseReady || !window.db || !window.currentUserId) {
-            console.warn("Firebase not ready for saving settings. Saving to local storage instead.");
-            saveSettingsToLocalStorage();
-            return;
-        }
-
-        const settingsData = {
-            numQuestions: numQuestionsInput.value || 'all',
-            enableTimer: enableTimerCheckbox.checked,
-            timeLimitMinutes: parseInt(timeLimitMinutesInput.value) || 10,
-            quizTitle: quizTitleInput.value || "General Exam Preparation Quiz",
-            lastUpdated: new Date()
-        };
-        try {
-            await window.setDoc(getUserDocRef(window.currentUserId), settingsData, { merge: true });
-            console.log("Settings saved to Firestore.");
-        } catch (e) {
-            console.error("Error saving settings to Firestore: ", e);
-            errorMessageDiv.textContent = `Error saving settings: ${e.message}`;
-            saveSettingsToLocalStorage(); // Fallback
-        }
-    }
-
-    // Load wrong answers from Firestore
-    async function loadWronglyAnsweredQuestions() {
-        if (!window.isFirebaseReady || !window.db || !window.currentUserId) {
-            console.log("Firebase not ready for loading wrong answers.");
-            // Fallback to local storage if Firebase is not ready
-            loadWronglyAnsweredQuestionsFromLocalStorage();
-            return;
-        }
-
-        try {
-            const docSnap = await window.getDoc(getUserDocRef(window.currentUserId));
-            if (docSnap.exists() && docSnap.data().wronglyAnswered) {
-                wronglyAnsweredQuestions = new Set(JSON.parse(docSnap.data().wronglyAnswered));
-                console.log("Wrong answers loaded from Firestore.");
-            } else {
-                console.log("No wrong answers found in Firestore. Using empty set or local storage.");
-                loadWronglyAnsweredQuestionsFromLocalStorage(); // Fallback
-            }
-        } catch (e) {
-            console.error("Error loading wrong answers from Firestore: ", e);
-            errorMessageDiv.textContent = `Error loading wrong answers: ${e.message}`;
-            loadWronglyAnsweredQuestionsFromLocalStorage(); // Fallback
-        }
-    }
-
-    // Save wrong answers to Firestore
-    async function saveWronglyAnsweredQuestions() {
-        if (!window.isFirebaseReady || !window.db || !window.currentUserId) {
-            console.warn("Firebase not ready for saving wrong answers. Saving to local storage instead.");
-            saveWronglyAnsweredQuestionsToLocalStorage();
-            return;
-        }
-
-        try {
-            await window.setDoc(getUserDocRef(window.currentUserId), {
-                wronglyAnswered: JSON.stringify(Array.from(wronglyAnsweredQuestions)),
-                lastUpdated: new Date()
-            }, { merge: true }); // Use merge to avoid overwriting other settings
-            console.log("Wrong answers saved to Firestore.");
-        } catch (e) {
-            console.error("Error saving wrong answers to Firestore: ", e);
-            errorMessageDiv.textContent = `Error saving wrong answers: ${e.message}`;
-            saveWronglyAnsweredQuestionsToLocalStorage(); // Fallback
-        }
-    }
-
-    // Clear wrong answers from Firestore
-    async function clearWrongAnswersHistory() {
-        if (!window.isFirebaseReady || !window.db || !window.currentUserId) {
-            console.warn("Firebase not ready for clearing wrong answers history. Clearing local storage instead.");
-            clearWrongAnswersHistoryLocalStorage();
-            return;
-        }
-
-        wronglyAnsweredQuestions.clear();
-        try {
-            await window.updateDoc(getUserDocRef(window.currentUserId), {
-                wronglyAnswered: JSON.stringify([]) // Store as empty array
-            });
-            console.log("Wrong answers history cleared from Firestore.");
-            errorMessageDiv.textContent = 'Wrong answers history cleared!';
-            setTimeout(() => errorMessageDiv.textContent = '', 3000);
-        } catch (e) {
-            console.error("Error clearing wrong answers history from Firestore: ", e);
-            errorMessageDiv.textContent = `Error clearing history: ${e.message}`;
-            clearWrongAnswersHistoryLocalStorage(); // Fallback
-        }
-    }
-
-    // --- Local Storage Fallback Functions (Existing Logic) ---
-    const LS_NUM_QUESTIONS_KEY = 'quizNumQuestions';
-    const LS_ENABLE_TIMER_KEY = 'quizEnableTimer';
-    const LS_TIME_LIMIT_KEY = 'quizTimeLimit';
-    const LS_WRONG_ANSWERS_KEY = 'quizWrongAnswers';
-    const LS_QUIZ_TITLE_KEY = 'quizTitle';
-
-    function loadSettingsFromLocalStorage() {
-        const storedNumQuestions = localStorage.getItem(LS_NUM_QUESTIONS_KEY);
-        if (storedNumQuestions) {
-            numQuestionsInput.value = storedNumQuestions === 'all' ? '' : storedNumQuestions;
-        }
-        const storedEnableTimer = localStorage.getItem(LS_ENABLE_TIMER_KEY);
-        if (storedEnableTimer !== null) {
-            enableTimerCheckbox.checked = JSON.parse(storedEnableTimer);
-        }
-        const storedTimeLimit = localStorage.getItem(LS_TIME_LIMIT_KEY);
-        if (storedTimeLimit) {
-            timeLimitMinutesInput.value = storedTimeLimit;
-        }
-        const storedQuizTitle = localStorage.getItem(LS_QUIZ_TITLE_KEY);
-        if (storedQuizTitle) {
-            quizTitleInput.value = storedQuizTitle;
-            quizTitleDisplay.textContent = storedQuizTitle;
-            document.title = storedQuizTitle;
-        } else {
-            quizTitleInput.value = "General Exam Preparation Quiz";
-            quizTitleDisplay.textContent = "General Exam Preparation Quiz";
-            document.title = "Exam Preparation Quiz";
-        }
-        console.log("Settings loaded from Local Storage.");
-    }
-
-    function saveSettingsToLocalStorage() {
-        localStorage.setItem(LS_NUM_QUESTIONS_KEY, numQuestionsInput.value || 'all');
-        localStorage.setItem(LS_ENABLE_TIMER_KEY, enableTimerCheckbox.checked);
-        localStorage.setItem(LS_TIME_LIMIT_KEY, timeLimitMinutesInput.value);
-        localStorage.setItem(LS_QUIZ_TITLE_KEY, quizTitleInput.value);
-        console.log("Settings saved to Local Storage.");
-    }
-
-    function loadWronglyAnsweredQuestionsFromLocalStorage() {
-        const storedWrongAnswers = localStorage.getItem(LS_WRONG_ANSWERS_KEY);
-        if (storedWrongAnswers) {
-            wronglyAnsweredQuestions = new Set(JSON.parse(storedWrongAnswers));
-        } else {
-            wronglyAnsweredQuestions = new Set();
-        }
-        console.log("Wrong answers loaded from Local Storage.");
-    }
-
-    function saveWronglyAnsweredQuestionsToLocalStorage() {
-        localStorage.setItem(LS_WRONG_ANSWERS_KEY, JSON.stringify(Array.from(wronglyAnsweredQuestions)));
-        console.log("Wrong answers saved to Local Storage.");
-    }
-
-    function clearWrongAnswersHistoryLocalStorage() {
-        wronglyAnsweredQuestions.clear();
-        localStorage.removeItem(LS_WRONG_ANSWERS_KEY);
-        errorMessageDiv.textContent = 'Wrong answers history cleared (Local Storage)!';
-        setTimeout(() => errorMessageDiv.textContent = '', 3000);
-        console.log("Wrong answers history cleared from Local Storage.");
-    }
-
-
-    // --- DOM Element References ---
-    const questionsContainer = document.getElementById('questions-container');
-    const quizForm = document.getElementById('quiz-form');
-    const scoreContainer = document.getElementById('score-container');
-    const errorMessageDiv = document.getElementById('error-message');
-    const numQuestionsInput = document.getElementById('num-questions');
-    const enableTimerCheckbox = document.getElementById('enable-timer-checkbox');
-    const timeLimitMinutesInput = document.getElementById('time-limit-minutes');
-    const timerDisplay = document.getElementById('timer-display');
-    const clearWrongAnswersBtn = document.getElementById('clear-wrong-answers-btn');
-    const quizTitleInput = document.getElementById('quiz-title-input');
-    const quizTitleDisplay = document.getElementById('quiz-title-display');
-
-
-    /**
-     * Loads the quiz questions, shuffles them, and renders the quiz.
-     */
-    function loadQuiz() {
-        enableQuizInputs(); // Reset UI state for a new quiz load
-        questionsContainer.innerHTML = 'Loading questions...'; // Show loading message
-
-        console.log("Attempting to fetch questions.csv from:", new URL('questions.csv', window.location.href).href); // Debugging with absolute URL
-        fetch(new URL('questions.csv', window.location.href).href)
-            .then(response => {
-                if (!response.ok) {
-                    let errorMsg = `HTTP error! Status: ${response.status}`;
-                    if (response.status === 404) {
-                        errorMsg += ' - questions.csv not found. Make sure it is in the same directory as index.html.';
-                    } else {
-                        errorMsg += ' - Could not load questions.csv.';
-                    }
-                    throw new Error(errorMsg);
-                }
-                return response.text();
-            })
-            .then(csvText => {
-                allQuizQuestions = parseCSV(csvText);
-                if (allQuizQuestions.length === 0) {
-                    errorMessageDiv.textContent = 'No questions found in questions.csv or file is empty/malformed. Please check the file content and format (including the Explanation column).';
-                    questionsContainer.innerHTML = '';
-                    quizForm.querySelector('.submit-btn').style.display = 'none';
-                    return;
-                }
-
-                // Determine the number of questions for this round
-                const requestedNum = parseInt(numQuestionsInput.value);
-                const numToPractice = (!isNaN(requestedNum) && requestedNum > 0) ? Math.min(requestedNum, allQuizQuestions.length) : allQuizQuestions.length;
-
-                // Prioritize wrongly answered questions
-                let prioritizedQuestions = [];
-                let otherQuestions = [];
-
-                allQuizQuestions.forEach(q => {
-                    if (wronglyAnsweredQuestions.has(q.QuestionText)) {
-                        prioritizedQuestions.push(q);
-                    } else {
-                        otherQuestions.push(q);
-                    }
-                });
-
-                // Shuffle both sets
-                shuffleArray(prioritizedQuestions);
-                shuffleArray(otherQuestions);
-
-                // Build currentQuizQuestions: prioritized first, then random others
-                currentQuizQuestions = [];
-                currentQuizQuestions.push(...prioritizedQuestions.slice(0, numToPractice));
-
-                // Fill remaining slots with other questions if needed
-                const remainingSlots = numToPractice - currentQuizQuestions.length;
-                if (remainingSlots > 0) {
-                    currentQuizQuestions.push(...otherQuestions.slice(0, remainingSlots));
-                }
-
-                // If somehow we have more questions than requested (due to prioritization logic filling up all slots),
-                // or if `numToPractice` was very small and we had many wrong answers, truncate.
-                currentQuizQuestions = currentQuizQuestions.slice(0, numToPractice);
-                shuffleArray(currentQuizQuestions); // Final shuffle to mix prioritized with others
-
-                questionsContainer.innerHTML = currentQuizQuestions.map(createQuestionElement).join('');
-                startTimer(); // Start timer after questions are loaded and rendered
-            })
-            .catch(error => {
-                console.error('Error loading or parsing questions.csv:', error);
-                errorMessageDiv.textContent = `Failed to load quiz questions: ${error.message}`;
-                questionsContainer.innerHTML = '';
-                quizForm.querySelector('.submit-btn').style.display = 'none';
-            });
-    }
-
-
-    // Use a global load function for Firebase's DOMContentLoaded listener to call
-    // This ensures Firebase is initialized and authenticated before trying to load quiz data.
-    // The original DOMContentLoaded listener now only sets up event handlers for UI.
-    document.addEventListener('DOMContentLoaded', () => {
-        // Event listener for individual validate buttons (using event delegation)
-        questionsContainer.addEventListener('click', (event) => {
-            if (event.target.classList.contains('validate-btn')) {
-                const index = parseInt(event.target.dataset.questionIndex);
-                validateSingleQuestion(index);
-            }
-        });
-
-        // Handle form submission (validates all questions and shows final score)
-        quizForm.addEventListener('submit', e => {
-            e.preventDefault(); // Prevent default form submission
-
-            let score = 0;
-            currentQuizQuestions.forEach((question, index) => { // Use currentQuizQuestions
-              // Validate each question and accumulate score
-              const isCorrect = validateSingleQuestion(index); // This will now show correct answer only if wrong
-              if (isCorrect) {
-                  score++;
-              }
-            });
-
-            // Display final score
-            scoreContainer.textContent = `Your score: ${score} out of ${currentQuizQuestions.length}`;
-            disableQuizInputs(); // Disable inputs after submission
-            saveSettings(); // Save current settings to Firestore
-        });
-
-        // Handle Retake Quiz button click
-        document.getElementById('retake-quiz-btn').addEventListener('click', () => {
-            saveSettings(); // Save settings before retaking
-            loadQuiz(); // Reload the quiz
-        });
-
-        // Handle clear wrong answers button click
-        clearWrongAnswersBtn.addEventListener('click', clearWrongAnswersHistory);
-
-        // Save settings whenever setting inputs change
-        numQuestionsInput.addEventListener('change', saveSettings);
-        enableTimerCheckbox.addEventListener('change', () => {
-            saveSettings();
-            // Re-start timer if setting changes and quiz is not submitted
-            if (enableTimerCheckbox.checked && quizForm.querySelector('.submit-btn').style.display !== 'none') {
-                 startTimer();
-            } else if (!enableTimerCheckbox.checked) {
-                clearInterval(timerInterval);
-                timerDisplay.style.display = 'none';
-            }
-        });
-        timeLimitMinutesInput.addEventListener('change', () => {
-            saveSettings();
-            // Re-start timer if setting changes and quiz is not submitted
-            if (enableTimerCheckbox.checked && quizForm.querySelector('.submit-btn').style.display !== 'none') {
-                startTimer();
-            }
-        });
-
-        // Update quiz title when input changes
-        quizTitleInput.addEventListener('input', () => {
-            quizTitleDisplay.textContent = quizTitleInput.value;
-            document.title = quizTitleInput.value; // Also update browser tab title
-            saveSettings();
-        });
-    });
-  </script>
-</body>
-</html>
+            const totalQuestions = allQuizQuestions.length;
+            const wrongAnswersCount = wronglyAnsweredQuestions.size;
+            const completionRate = totalQuestions > 0 ? Math.round(((totalQuestions - wrongAnswersCount) / totalQuestions) * 100) : 0;
+            
+            totalQuestionsEl.textContent = totalQuestions;
+            wrongAnswersEl.textContent = wrongAnswersCount;
+            completionRateEl.textContent = `${completionRate}%`;
+            
+            if (totalQuestions > 0) {
