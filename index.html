@@ -299,15 +299,19 @@
 
 
     document.addEventListener('DOMContentLoaded', async () => {
-        // MANDATORY: Use __app_id and __firebase_config provided by the Canvas environment
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        // Manually inserted Firebase config for local testing or specific environments
+        const firebaseConfig = {
+          apiKey: "AIzaSyCmlSLhRNeOrEG4aT9t-JK20QAjzpdELVc",
+          authDomain: "studybuddy-58e84.firebaseapp.com",
+          projectId: "studybuddy-58e84",
+          storageBucket: "studybuddy-58e84.firebasestorage.app",
+          messagingSenderId: "143466700741",
+          appId: "1:143466700741:web:9db108d70302aed8c435ac",
+          measurementId: "G-0K69MEBD6Q"
+        };
+        // For consistency, set appId using projectId for Firestore paths
+        const appId = firebaseConfig.projectId; // This will be "studybuddy-58e84"
 
-        if (Object.keys(firebaseConfig).length === 0) {
-            document.getElementById('error-message').textContent = 'Firebase configuration missing. Please ensure your Canvas environment provides __firebase_config.';
-            console.error('Firebase configuration not found.');
-            return;
-        }
 
         // Initialize Firebase
         window.firebaseApp = initializeApp(firebaseConfig);
@@ -524,7 +528,8 @@
             saveWronglyAnsweredQuestions();
             return true; // Indicate correct answer
         } else {
-            resultElement.textContent = `Wrong! The correct answer was ${correctAnswer}.`; // Always show the correct answer here on wrong
+            // FIX: Modified to ONLY show the correct answer here IF the user was wrong
+            resultElement.textContent = `Wrong! The correct answer was ${correctAnswer}.`;
             resultElement.classList.add('wrong');
             selectedOption.parentElement.style.backgroundColor = '#ffe6e6';
             selectedOption.parentElement.style.border = '1px solid #e74c3c';
@@ -647,9 +652,8 @@
     // --- Firebase Data Operations ---
     // Collection for user-specific data
     function getUserDocRef(userId) {
-        // Use the Canvas provided __app_id for unique collection paths
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        // Ensured window.doc and window.db are available and used correctly
+        // Use the hardcoded appId from the config
+        const appId = firebaseConfig.projectId; // Now directly from the hardcoded config
         return window.doc(window.db, 'artifacts', appId, 'users', userId, 'quizData', 'userSettings');
     }
 
@@ -667,7 +671,6 @@
         }
 
         try {
-            // Ensure window.getDoc is used correctly
             const docSnap = await window.getDoc(getUserDocRef(window.currentUserId));
             if (docSnap.exists()) {
                 const data = docSnap.data();
@@ -708,7 +711,6 @@
             lastUpdated: new Date()
         };
         try {
-            // Ensure window.setDoc is used correctly
             await window.setDoc(getUserDocRef(window.currentUserId), settingsData, { merge: true });
             console.log("Settings saved to Firestore.");
         } catch (e) {
@@ -728,7 +730,6 @@
         }
 
         try {
-            // Ensure window.getDoc is used correctly
             const docSnap = await window.getDoc(getUserDocRef(window.currentUserId));
             if (docSnap.exists() && docSnap.data().wronglyAnswered) {
                 wronglyAnsweredQuestions = new Set(JSON.parse(docSnap.data().wronglyAnswered));
@@ -753,7 +754,6 @@
         }
 
         try {
-            // Ensure window.setDoc is used correctly
             await window.setDoc(getUserDocRef(window.currentUserId), {
                 wronglyAnswered: JSON.stringify(Array.from(wronglyAnsweredQuestions)),
                 lastUpdated: new Date()
@@ -776,7 +776,6 @@
 
         wronglyAnsweredQuestions.clear();
         try {
-            // Ensure window.updateDoc is used correctly
             await window.updateDoc(getUserDocRef(window.currentUserId), {
                 wronglyAnswered: JSON.stringify([]) // Store as empty array
             });
