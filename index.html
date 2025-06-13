@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>PEGACPSA23V1 Exam Questions</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; max-width: 800px; }
+    .question { border-bottom: 1px solid #ccc; margin-bottom: 15px; padding-bottom: 10px; }
+    .question-title { font-weight: bold; cursor: pointer; }
+    .answer { display: none; margin-top: 8px; background: #f9f9f9; padding: 10px; border-left: 4px solid #0078D7; }
+  </style>
+</head>
+<body>
+  <h1>PEGACPSA23V1 Exam Questions</h1>
+  <div id="questions-container">Loading questions...</div>
+
+  <script>
+    function toggleAnswer(el) {
+      const next = el.nextElementSibling;
+      next.style.display = next.style.display === 'block' ? 'none' : 'block';
+    }
+
+    function parseCSV(text) {
+      const lines = text.trim().split('\n');
+      const headers = lines[0].split(',');
+      return lines.slice(1).map(line => {
+        const values = line.split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/).map(v => v.replace(/^"|"$/g, ''));
+        return headers.reduce((obj, h, i) => (obj[h] = values[i], obj), {});
+      });
+    }
+
+    fetch('questions.csv')
+      .then(res => res.text())
+      .then(csv => {
+        const questions = parseCSV(csv);
+        const container = document.getElementById('questions-container');
+        container.innerHTML = questions.map(q => `
+          <div class="question">
+            <div class="question-title" onclick="toggleAnswer(this)">
+              ${q.QuestionNumber}. ${q.QuestionText}
+            </div>
+            <div class="answer">
+              A. ${q.OptionA}<br/>
+              B. ${q.OptionB}<br/>
+              C. ${q.OptionC}<br/>
+              D. ${q.OptionD}<br/>
+              <b>Answer:</b> ${q.Answer}
+            </div>
+          </div>
+        `).join('');
+      });
+  </script>
+</body>
+</html>

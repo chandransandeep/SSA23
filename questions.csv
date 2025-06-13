@@ -1,0 +1,4 @@
+QuestionNumber,QuestionText,OptionA,OptionB,OptionC,OptionD,Answer
+1,What is the purpose of a data transform in Pega?,To create a new case,To transform data between pages,To perform a decision tree,To start a flow,B
+2,Which rule is used to define a case lifecycle in Pega?,Flow rule,Data Transform,Case Type rule,When rule,C
+3,What does the px prefix typically indicate in a property name?,It is a system-owned property,It is a user-defined property,It is a page list,It is a report definition,A
