@@ -4,9 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Exam Preparation Quiz</title>
-  <!-- ... (keep your CSS and fonts as is) ... -->
+  <!-- (Keep your CSS and fonts as is) -->
   <style>
-    /* ... --- your existing CSS here, unchanged --- ... */
+    /* ... your existing CSS ... */
   </style>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script type="module">
@@ -178,9 +178,6 @@
     let quizMode = "wrong"; // "wrong" or "all"
     let quizForm = null;
 
-    // CSV, shuffle, and create question helpers (as before)
-    // ... (your parseCSV, shuffleArray, and createQuestionElement functions remain unchanged) ...
-
     function shuffleArray(array) {
       const shuffled = [...array];
       for (let i = shuffled.length - 1; i > 0; i--) {
@@ -249,24 +246,20 @@
       `;
     }
 
-    // Main quiz loading logic with mode support
     async function loadQuiz() {
       const questionsContainer = document.getElementById('questions-container');
       try {
-        // Load questions from CSV or use sample data
         allQuizQuestions = await loadCSVData();
         if (allQuizQuestions.length === 0) {
           questionsContainer.innerHTML = '<p>❌ No questions available. Please upload a CSV file with questions.</p>';
           return;
         }
-        // Mode selection
         let questionsToShow = [];
         if (quizMode === "wrong") {
           questionsToShow = allQuizQuestions.filter(q => lastQuizResults[q.QuestionText] !== "correct");
         } else {
           questionsToShow = allQuizQuestions.slice();
         }
-        // If none left in wrong mode, show congrats and offer to retake all
         if (quizMode === "wrong" && questionsToShow.length === 0) {
           questionsContainer.innerHTML = '<p>🎉 All questions have been answered correctly! <br><button id="show-all-btn" type="button">Restart Full Quiz</button></p>';
           document.getElementById('show-all-btn').onclick = () => {
@@ -279,11 +272,9 @@
           document.getElementById('score-container').innerHTML = '';
           return;
         }
-        // Limit number of questions if needed
         const numQuestionsInput = document.getElementById('num-questions');
         const numQuestions = parseInt(numQuestionsInput.value) || questionsToShow.length;
         currentQuizQuestions = shuffleArray(questionsToShow).slice(0, numQuestions);
-        // Generate quiz HTML
         questionsContainer.innerHTML = currentQuizQuestions
           .map((question, index) => createQuestionElement(question, index))
           .join('');
@@ -490,7 +481,6 @@
     }
 
     // --- Firebase save/load for wrong answers and lastQuizResults ---
-
     async function loadWronglyAnsweredQuestions() {
       if (window.currentUserId && window.db) {
         try {
@@ -507,6 +497,7 @@
         } catch (e) {
           wronglyAnsweredQuestions = new Set(JSON.parse(localStorage.getItem('wronglyAnsweredQuestions') || "[]"));
           lastQuizResults = JSON.parse(localStorage.getItem('lastQuizResults') || "{}");
+          console.warn("Failed to load from Firebase, loaded from localStorage.", e);
         }
       } else {
         wronglyAnsweredQuestions = new Set(JSON.parse(localStorage.getItem('wronglyAnsweredQuestions') || "[]"));
@@ -526,6 +517,7 @@
           }, { merge: true });
         } catch (e) {
           // fallback already done above
+          console.warn("Failed to save to Firebase, saved to localStorage instead.", e);
         }
       }
     }
@@ -534,7 +526,6 @@
       // Add settings load/save from Firebase if needed
     }
 
-    // Expose functions globally for module script
     window.loadWronglyAnsweredQuestions = loadWronglyAnsweredQuestions;
     window.loadSettings = loadSettings;
     window.loadQuizStats = loadQuizStats;
@@ -547,7 +538,6 @@
     window.parseCSV = parseCSV;
     window.shuffleArray = shuffleArray;
 
-    // For debugging
     window.lastQuizResults = lastQuizResults;
     window.allQuizQuestions = allQuizQuestions;
     window.currentQuizQuestions = currentQuizQuestions;
