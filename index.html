@@ -80,9 +80,81 @@
         cursor: pointer;
         font-size: 0.9em;
         transition: background-color 0.2s ease;
+        margin-right: 10px;
+        margin-bottom: 5px;
     }
     .settings-panel button:hover {
         background-color: #c0392b;
+    }
+    /* Toggle Button Styles */
+    .quiz-mode-toggle {
+        display: flex;
+        align-items: center;
+        margin-bottom: 15px;
+        padding: 10px;
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+    }
+    .toggle-button {
+        background-color: #17a2b8;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.9em;
+        transition: background-color 0.2s ease;
+        margin-right: 10px;
+    }
+    .toggle-button:hover {
+        background-color: #138496;
+    }
+    .toggle-button.active {
+        background-color: #28a745;
+    }
+    .quiz-stats {
+        font-size: 0.9em;
+        color: #6c757d;
+        margin-left: auto;
+    }
+    /* Congratulations Message */
+    .congratulations-panel {
+        background-color: #d4edda;
+        border: 1px solid #c3e6cb;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        text-align: center;
+        display: none;
+    }
+    .congratulations-panel h3 {
+        color: #155724;
+        margin-bottom: 10px;
+    }
+    .congratulations-panel p {
+        color: #155724;
+        margin-bottom: 15px;
+    }
+    .congratulations-panel button {
+        background-color: #28a745;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 1em;
+        transition: background-color 0.2s ease;
+    }
+    .congratulations-panel button:hover {
+        background-color: #218838;
+    }
+    /* Multiple Answer Support */
+    .question-type-indicator {
+        font-size: 0.85em;
+        color: #6c757d;
+        margin-bottom: 8px;
+        font-style: italic;
     }
     #timer-display {
         text-align: center;
@@ -136,7 +208,8 @@
       background-color: #f5f8ff;
       transform: translateY(-2px);
     }
-    .options input[type="radio"] {
+    .options input[type="radio"],
+    .options input[type="checkbox"] {
       margin-right: 12px;
       transform: scale(1.2);
     }
@@ -206,6 +279,11 @@
       background-color: #ffe6e6;
       border: 1px solid #f0a8a8;
     }
+    .partial {
+      color: #f39c12;
+      background-color: #fef9e7;
+      border: 1px solid #f39c12;
+    }
     .explanation {
       margin-top: 10px;
       padding: 10px 15px;
@@ -238,11 +316,13 @@
         border: 1px solid #e74c3c;
         border-radius: 8px;
     }
-    .options input[type="radio"]:disabled + span {
+    .options input[type="radio"]:disabled + span,
+    .options input[type="checkbox"]:disabled + span {
       cursor: not-allowed;
       opacity: 0.7;
     }
-    .options label:has(input[type="radio"]:disabled) {
+    .options label:has(input[type="radio"]:disabled),
+    .options label:has(input[type="checkbox"]:disabled) {
         cursor: not-allowed;
         background-color: #f0f0f0; /* Grey out disabled options */
         transform: none; /* No hover effect on disabled */
@@ -272,6 +352,14 @@
         }
         .options label {
             padding: 8px 10px;
+        }
+        .quiz-mode-toggle {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .quiz-stats {
+            margin-left: 0;
+            margin-top: 10px;
         }
     }
   </style>
@@ -372,6 +460,22 @@
         <input type="number" id="time-limit-minutes" min="1" value="10">
         <br><br>
         <button type="button" id="clear-wrong-answers-btn">Clear Wrong Answers History</button>
+        <button type="button" id="clear-session-data-btn">Clear Session Data</button>
+    </div>
+
+    <!-- Congratulations Panel (hidden by default) -->
+    <div id="congratulations-panel" class="congratulations-panel">
+        <h3>🎉 Congratulations! 🎉</h3>
+        <p>You've mastered all the questions! All previously incorrect answers have been answered correctly.</p>
+        <button type="button" id="restart-all-btn">Restart with All Questions</button>
+    </div>
+
+    <!-- Quiz Mode Toggle -->
+    <div id="quiz-mode-toggle" class="quiz-mode-toggle">
+        <button type="button" id="toggle-mode-btn" class="toggle-button active">Retake Only Wrong/Unanswered</button>
+        <div class="quiz-stats" id="quiz-stats">
+            Wrong: <span id="wrong-count">0</span> | Unanswered: <span id="unanswered-count">0</span> | Correct: <span id="correct-count">0</span>
+        </div>
     </div>
 
     <div id="timer-display"></div>
@@ -399,7 +503,8 @@
         }
         document.getElementById('error-message').textContent = ''; // Clear previous auth warning
 
-        // FIX: Ensure loadWronglyAnsweredQuestions and loadSettings are awaited before loadQuiz
+        // Load session data and settings before quiz
+        await loadSessionData();
         await loadWronglyAnsweredQuestions(); // Load wrong answers history from Firestore
         await loadSettings(); // Load user settings from Firestore (needs await)
         loadQuiz(); // Proceed with quiz questions load
@@ -429,8 +534,8 @@
       }
 
       const headers = lines[0].split(',').map(header => header.trim());
-      // Validate headers to ensure required columns exist
-      const requiredHeaders = ["QuestionText", "OptionA", "OptionB", "OptionC", "OptionD", "Answer", "Explanation"];
+      // Updated headers for multiple answers support
+      const requiredHeaders = ["QuestionNumber", "QuestionText", "OptionA", "OptionB", "OptionC", "OptionD", "Answer 1", "Explanation"];
       const missingHeaders = requiredHeaders.filter(h => !headers.includes(h));
       if (missingHeaders.length > 0) {
           throw new Error(`Missing required CSV headers: ${missingHeaders.join(', ')}. Please check your questions.csv file.`);
@@ -445,10 +550,27 @@
             return null; // Skip this row
         }
 
-        return headers.reduce((obj, h, i) => {
+        const questionObj = headers.reduce((obj, h, i) => {
           obj[h] = values[i];
           return obj;
         }, {});
+
+        // Process multiple answers
+        questionObj.correctAnswers = [];
+        if (questionObj['Answer 1'] && questionObj['Answer 1'].trim()) {
+            questionObj.correctAnswers.push(questionObj['Answer 1'].trim());
+        }
+        if (questionObj['Answer 2'] && questionObj['Answer 2'].trim()) {
+            questionObj.correctAnswers.push(questionObj['Answer 2'].trim());
+        }
+        if (questionObj['Answer 3'] && questionObj['Answer 3'].trim()) {
+            questionObj.correctAnswers.push(questionObj['Answer 3'].trim());
+        }
+
+        // Determine if it's a multiple choice question
+        questionObj.isMultipleChoice = questionObj.correctAnswers.length > 1;
+
+        return questionObj;
       }).filter(row => row !== null); // Filter out any null rows (malformed)
     }
 
@@ -467,18 +589,25 @@
         D: question.OptionD || ''
       };
 
+      const inputType = question.isMultipleChoice ? 'checkbox' : 'radio';
+      const inputName = question.isMultipleChoice ? `q${index}[]` : `q${index}`;
+      const questionTypeText = question.isMultipleChoice ? 
+        '(Multiple answers possible - select all that apply)' : 
+        '(Single answer)';
+
       return `
         <div class="question" data-question-index="${index}">
           <div class="question-title">${index + 1}. ${question.QuestionText || 'No Question Text'}</div>
+          <div class="question-type-indicator">${questionTypeText}</div>
           <div class="options">
             ${Object.entries(options).map(([key, value]) => `
               <label>
-                <input type="radio" name="q${index}" value="${key}" /> <span>${key}. ${value}</span>
+                <input type="${inputType}" name="${inputName}" value="${key}" /> <span>${key}. ${value}</span>
               </label>
             `).join('')}
           </div>
           <div class="result" id="result-q${index}"></div>
-          <div class="explanation" id="explanation-q${index}"></div> <!-- Added explanation div -->
+          <div class="explanation" id="explanation-q${index}"></div>
           <div class="question-actions">
             <button type="button" class="validate-btn" data-question-index="${index}">Validate Answer</button>
           </div>
@@ -489,70 +618,137 @@
     /**
      * Validates a single question based on user selection and updates UI.
      * @param {number} index - The index of the question to validate.
-     * @returns {boolean} True if the answer is correct, false otherwise or if no answer selected.
+     * @returns {string} 'correct', 'wrong', 'partial', or 'unanswered'
      */
     function validateSingleQuestion(index) {
-        const question = currentQuizQuestions[index]; // Use currentQuizQuestions
-        const selectedOption = quizForm.querySelector(`input[name="q${index}"]:checked`);
-        const resultElement = document.getElementById(`result-q${index}`);
-        const explanationElement = document.getElementById(`explanation-q${index}`); // Get explanation element
+        const question = currentQuizQuestions[index];
         const questionDiv = document.querySelector(`.question[data-question-index="${index}"]`);
+        const resultElement = document.getElementById(`result-q${index}`);
+        const explanationElement = document.getElementById(`explanation-q${index}`);
+        const questionText = question.QuestionText;
 
         // Clear previous feedback styles
         resultElement.textContent = '';
-        resultElement.className = 'result'; // Reset classes for result message
-        explanationElement.textContent = ''; // Clear previous explanation
-        explanationElement.style.display = 'none'; // Hide explanation by default
+        resultElement.className = 'result';
+        explanationElement.textContent = '';
+        explanationElement.style.display = 'none';
 
         // Remove previous highlight from options for this question
         questionDiv.querySelectorAll('label').forEach(label => {
-            label.style.backgroundColor = ''; // Clear background
-            label.style.border = '1px solid #e0e0e0'; // Reset border
+            label.style.backgroundColor = '';
+            label.style.border = '1px solid #e0e0e0';
         });
 
-        if (!selectedOption) {
+        let selectedAnswers = [];
+        if (question.isMultipleChoice) {
+            const selectedOptions = quizForm.querySelectorAll(`input[name="q${index}[]"]:checked`);
+            selectedAnswers = Array.from(selectedOptions).map(option => option.value);
+        } else {
+            const selectedOption = quizForm.querySelector(`input[name="q${index}"]:checked`);
+            if (selectedOption) {
+                selectedAnswers = [selectedOption.value];
+            }
+        }
+
+        if (selectedAnswers.length === 0) {
             resultElement.textContent = 'Please select an answer for this question.';
             resultElement.classList.add('wrong');
-            return false; // Indicate that no answer was selected
+            sessionAnswers[questionText] = 'unanswered';
+            saveSessionData();
+            updateQuizStats();
+            return 'unanswered';
         }
 
-        const selectedValue = selectedOption.value;
-        const correctAnswer = question.Answer;
+        const correctAnswers = question.correctAnswers;
+        const selectedSet = new Set(selectedAnswers);
+        const correctSet = new Set(correctAnswers);
 
-        if (selectedValue === correctAnswer) {
+        // Check if answers match exactly
+        const isExactMatch = selectedSet.size === correctSet.size && 
+                            [...selectedSet].every(answer => correctSet.has(answer));
+
+        // Check for partial credit (some correct, but not all)
+        const correctSelected = selectedAnswers.filter(answer => correctSet.has(answer));
+        const incorrectSelected = selectedAnswers.filter(answer => !correctSet.has(answer));
+
+        let result;
+        if (isExactMatch) {
             resultElement.textContent = 'Correct! 🎉';
             resultElement.classList.add('correct');
-            selectedOption.parentElement.style.backgroundColor = '#e6ffe6';
-            selectedOption.parentElement.style.border = '1px solid #27ae60';
-            // Remove from wrong answers history if it was there
-            wronglyAnsweredQuestions.delete(question.QuestionText);
+            // Highlight all correct answers
+            selectedAnswers.forEach(answer => {
+                const answerInput = quizForm.querySelector(`input[name="${question.isMultipleChoice ? `q${index}[]` : `q${index}`}"][value="${answer}"]`);
+                if (answerInput) {
+                    answerInput.parentElement.style.backgroundColor = '#e6ffe6';
+                    answerInput.parentElement.style.border = '1px solid #27ae60';
+                }
+            });
+            wronglyAnsweredQuestions.delete(questionText);
             saveWronglyAnsweredQuestions();
-            return true; // Indicate correct answer
+            sessionAnswers[questionText] = 'correct';
+            result = 'correct';
+        } else if (correctSelected.length > 0 && question.isMultipleChoice) {
+            // Partial credit for multiple choice
+            resultElement.textContent = `Partial Credit! You got ${correctSelected.length} out of ${correctAnswers.length} correct. Correct answers: ${correctAnswers.join(', ')}`;
+            resultElement.classList.add('partial');
+            
+            // Highlight correct selections in green, incorrect in red
+            correctSelected.forEach(answer => {
+                const answerInput = quizForm.querySelector(`input[name="q${index}[]"][value="${answer}"]`);
+                if (answerInput) {
+                    answerInput.parentElement.style.backgroundColor = '#e6ffe6';
+                    answerInput.parentElement.style.border = '1px solid #27ae60';
+                }
+            });
+            incorrectSelected.forEach(answer => {
+                const answerInput = quizForm.querySelector(`input[name="q${index}[]"][value="${answer}"]`);
+                if (answerInput) {
+                    answerInput.parentElement.style.backgroundColor = '#ffe6e6';
+                    answerInput.parentElement.style.border = '1px solid #e74c3c';
+                }
+            });
+
+            wronglyAnsweredQuestions.add(questionText);
+            saveWronglyAnsweredQuestions();
+            sessionAnswers[questionText] = 'partial';
+            result = 'partial';
         } else {
-            // FIX: Modified to ONLY show the correct answer here IF the user was wrong
-            resultElement.textContent = `Wrong! The correct answer was ${correctAnswer}.`;
+            resultElement.textContent = `Wrong! The correct answer${correctAnswers.length > 1 ? 's' : ''}: ${correctAnswers.join(', ')}`;
             resultElement.classList.add('wrong');
-            selectedOption.parentElement.style.backgroundColor = '#ffe6e6';
-            selectedOption.parentElement.style.border = '1px solid #e74c3c';
+            
+            // Highlight selected answers in red
+            selectedAnswers.forEach(answer => {
+                const answerInput = quizForm.querySelector(`input[name="${question.isMultipleChoice ? `q${index}[]` : `q${index}`}"][value="${answer}"]`);
+                if (answerInput) {
+                    answerInput.parentElement.style.backgroundColor = '#ffe6e6';
+                    answerInput.parentElement.style.border = '1px solid #e74c3c';
+                }
+            });
 
-            // Add to wrong answers history
-            wronglyAnsweredQuestions.add(question.QuestionText);
+            wronglyAnsweredQuestions.add(questionText);
             saveWronglyAnsweredQuestions();
-
-            // Display explanation if available
-            if (question.Explanation) {
-                explanationElement.textContent = `Explanation: ${question.Explanation}`;
-                explanationElement.style.display = 'block'; // Show explanation
-            }
-
-            // Highlight the actual correct answer if it exists
-            const correctLabel = quizForm.querySelector(`input[name="q${index}"][value="${correctAnswer}"]`);
-            if (correctLabel) {
-                correctLabel.parentElement.style.backgroundColor = '#d4edda';
-                correctLabel.parentElement.style.border = '1px solid #27ae60';
-            }
-            return false; // Indicate incorrect answer
+            sessionAnswers[questionText] = 'wrong';
+            result = 'wrong';
         }
+
+        // Show all correct answers
+        correctAnswers.forEach(answer => {
+            const correctInput = quizForm.querySelector(`input[name="${question.isMultipleChoice ? `q${index}[]` : `q${index}`}"][value="${answer}"]`);
+            if (correctInput && !selectedSet.has(answer)) {
+                correctInput.parentElement.style.backgroundColor = '#d4edda';
+                correctInput.parentElement.style.border = '1px solid #27ae60';
+            }
+        });
+
+        // Display explanation if available
+        if (question.Explanation && question.Explanation.trim()) {
+            explanationElement.textContent = `Explanation: ${question.Explanation}`;
+            explanationElement.style.display = 'block';
+        }
+
+        saveSessionData();
+        updateQuizStats();
+        return result;
     }
 
     /**
@@ -560,7 +756,7 @@
      */
     function disableQuizInputs() {
         clearInterval(timerInterval); // Stop timer
-        quizForm.querySelectorAll('input[type="radio"]').forEach(input => {
+        quizForm.querySelectorAll('input[type="radio"], input[type="checkbox"]').forEach(input => {
             input.disabled = true;
         });
         quizForm.querySelector('.submit-btn').style.display = 'none'; // Hide submit button
@@ -579,7 +775,7 @@
         clearInterval(timerInterval); // Ensure any running timer is stopped
         timerDisplay.style.display = 'none'; // Hide timer display
 
-        quizForm.querySelectorAll('input[type="radio"]').forEach(input => {
+        quizForm.querySelectorAll('input[type="radio"], input[type="checkbox"]').forEach(input => {
             input.disabled = false;
             input.checked = false; // Uncheck all
         });
@@ -628,7 +824,6 @@
                     clearInterval(timerInterval);
                     timerDisplay.textContent = 'Time Up!';
                     quizForm.dispatchEvent(new Event('submit')); // Auto-submit quiz
-                    // Optionally, show a modal or alert for time up
                 }
             }, 1000);
         } else {
@@ -649,7 +844,6 @@
         }
     }
 
-
     // --- Firebase Data Operations ---
     // Collection for user-specific data
     function getUserDocRef(userId) {
@@ -661,12 +855,13 @@
     let allQuizQuestions = []; // Stores all questions from CSV
     let currentQuizQuestions = []; // Stores questions for the current round
     let wronglyAnsweredQuestions = new Set(); // Stores QuestionText of wrongly answered questions
+    let sessionAnswers = {}; // Tracks answers per session: {questionText: 'correct'|'wrong'|'unanswered'|'partial'}
+    let quizMode = 'retake'; // 'retake' for wrong/unanswered only, 'all' for all questions
 
     // Load settings from Firestore
     async function loadSettings() {
         if (!window.isFirebaseReady || !window.db || !window.currentUserId) {
             console.log("Firebase not ready for loading settings.");
-            // Fallback to local storage if Firebase is not ready
             loadSettingsFromLocalStorage();
             return;
         }
@@ -685,13 +880,11 @@
                 console.log("Settings loaded from Firestore.");
             } else {
                 console.log("No settings found in Firestore for this user. Using defaults.");
-                // Load from local storage if no settings in Firestore (e.g., first time using Firestore)
                 loadSettingsFromLocalStorage();
             }
         } catch (e) {
             console.error("Error loading settings from Firestore: ", e);
             errorMessageDiv.textContent = `Error loading settings: ${e.message}`;
-            // Fallback to local storage on error
             loadSettingsFromLocalStorage();
         }
     }
@@ -717,15 +910,80 @@
         } catch (e) {
             console.error("Error saving settings to Firestore: ", e);
             errorMessageDiv.textContent = `Error saving settings: ${e.message}`;
-            saveSettingsToLocalStorage(); // Fallback
+            saveSettingsToLocalStorage();
         }
+    }
+
+    // Load session data from Firestore
+    async function loadSessionData() {
+        if (!window.isFirebaseReady || !window.db || !window.currentUserId) {
+            console.log("Firebase not ready for loading session data.");
+            loadSessionDataFromLocalStorage();
+            return;
+        }
+
+        try {
+            const docSnap = await window.getDoc(getUserDocRef(window.currentUserId));
+            if (docSnap.exists() && docSnap.data().sessionAnswers) {
+                sessionAnswers = JSON.parse(docSnap.data().sessionAnswers);
+                console.log("Session data loaded from Firestore.");
+            } else {
+                console.log("No session data found in Firestore. Using empty object.");
+                sessionAnswers = {};
+            }
+        } catch (e) {
+            console.error("Error loading session data from Firestore: ", e);
+            loadSessionDataFromLocalStorage();
+        }
+    }
+
+    // Save session data to Firestore
+    async function saveSessionData() {
+        if (!window.isFirebaseReady || !window.db || !window.currentUserId) {
+            console.warn("Firebase not ready for saving session data. Saving to local storage instead.");
+            saveSessionDataToLocalStorage();
+            return;
+        }
+
+        try {
+            await window.setDoc(getUserDocRef(window.currentUserId), {
+                sessionAnswers: JSON.stringify(sessionAnswers),
+                lastUpdated: new Date()
+            }, { merge: true });
+            console.log("Session data saved to Firestore.");
+        } catch (e) {
+            console.error("Error saving session data to Firestore: ", e);
+            saveSessionDataToLocalStorage();
+        }
+    }
+
+    // Clear session data
+    async function clearSessionData() {
+        sessionAnswers = {};
+        if (!window.isFirebaseReady || !window.db || !window.currentUserId) {
+            console.warn("Firebase not ready for clearing session data. Clearing local storage instead.");
+            clearSessionDataLocalStorage();
+            return;
+        }
+
+        try {
+            await window.updateDoc(getUserDocRef(window.currentUserId), {
+                sessionAnswers: JSON.stringify({})
+            });
+            console.log("Session data cleared from Firestore.");
+            errorMessageDiv.textContent = 'Session data cleared!';
+            setTimeout(() => errorMessageDiv.textContent = '', 3000);
+        } catch (e) {
+            console.error("Error clearing session data from Firestore: ", e);
+            clearSessionDataLocalStorage();
+        }
+        updateQuizStats();
     }
 
     // Load wrong answers from Firestore
     async function loadWronglyAnsweredQuestions() {
         if (!window.isFirebaseReady || !window.db || !window.currentUserId) {
             console.log("Firebase not ready for loading wrong answers.");
-            // Fallback to local storage if Firebase is not ready
             loadWronglyAnsweredQuestionsFromLocalStorage();
             return;
         }
@@ -737,12 +995,12 @@
                 console.log("Wrong answers loaded from Firestore.");
             } else {
                 console.log("No wrong answers found in Firestore. Using empty set or local storage.");
-                loadWronglyAnsweredQuestionsFromLocalStorage(); // Fallback
+                loadWronglyAnsweredQuestionsFromLocalStorage();
             }
         } catch (e) {
             console.error("Error loading wrong answers from Firestore: ", e);
             errorMessageDiv.textContent = `Error loading wrong answers: ${e.message}`;
-            loadWronglyAnsweredQuestionsFromLocalStorage(); // Fallback
+            loadWronglyAnsweredQuestionsFromLocalStorage();
         }
     }
 
@@ -758,12 +1016,12 @@
             await window.setDoc(getUserDocRef(window.currentUserId), {
                 wronglyAnswered: JSON.stringify(Array.from(wronglyAnsweredQuestions)),
                 lastUpdated: new Date()
-            }, { merge: true }); // Use merge to avoid overwriting other settings
+            }, { merge: true });
             console.log("Wrong answers saved to Firestore.");
         } catch (e) {
             console.error("Error saving wrong answers to Firestore: ", e);
             errorMessageDiv.textContent = `Error saving wrong answers: ${e.message}`;
-            saveWronglyAnsweredQuestionsToLocalStorage(); // Fallback
+            saveWronglyAnsweredQuestionsToLocalStorage();
         }
     }
 
@@ -778,7 +1036,7 @@
         wronglyAnsweredQuestions.clear();
         try {
             await window.updateDoc(getUserDocRef(window.currentUserId), {
-                wronglyAnswered: JSON.stringify([]) // Store as empty array
+                wronglyAnswered: JSON.stringify([])
             });
             console.log("Wrong answers history cleared from Firestore.");
             errorMessageDiv.textContent = 'Wrong answers history cleared!';
@@ -786,16 +1044,94 @@
         } catch (e) {
             console.error("Error clearing wrong answers history from Firestore: ", e);
             errorMessageDiv.textContent = `Error clearing history: ${e.message}`;
-            clearWrongAnswersHistoryLocalStorage(); // Fallback
+            clearWrongAnswersHistoryLocalStorage();
         }
+        updateQuizStats();
     }
 
-    // --- Local Storage Fallback Functions (Existing Logic) ---
+    // Update quiz statistics display
+    function updateQuizStats() {
+        if (!allQuizQuestions.length) return;
+
+        let wrongCount = 0;
+        let unansweredCount = 0;
+        let correctCount = 0;
+
+        allQuizQuestions.forEach(question => {
+            const questionText = question.QuestionText;
+            const sessionStatus = sessionAnswers[questionText];
+            
+            if (sessionStatus === 'correct') {
+                correctCount++;
+            } else if (sessionStatus === 'wrong' || sessionStatus === 'partial') {
+                wrongCount++;
+            } else if (wronglyAnsweredQuestions.has(questionText)) {
+                wrongCount++;
+            } else {
+                unansweredCount++;
+            }
+        });
+
+        document.getElementById('wrong-count').textContent = wrongCount;
+        document.getElementById('unanswered-count').textContent = unansweredCount;
+        document.getElementById('correct-count').textContent = correctCount;
+    }
+
+    // Toggle quiz mode
+    function toggleQuizMode() {
+        const toggleBtn = document.getElementById('toggle-mode-btn');
+        const congratsPanel = document.getElementById('congratulations-panel');
+        
+        if (quizMode === 'retake') {
+            quizMode = 'all';
+            toggleBtn.textContent = 'Show All Questions';
+            toggleBtn.classList.remove('active');
+            congratsPanel.style.display = 'none';
+        } else {
+            quizMode = 'retake';
+            toggleBtn.textContent = 'Retake Only Wrong/Unanswered';
+            toggleBtn.classList.add('active');
+        }
+        
+        loadQuiz();
+    }
+
+    // Check if all questions are correct and show congratulations
+    function checkForCongratulations() {
+        if (!allQuizQuestions.length) return false;
+
+        const wrongAndUnanswered = getWrongAndUnansweredQuestions();
+        if (wrongAndUnanswered.length === 0 && quizMode === 'retake') {
+            document.getElementById('congratulations-panel').style.display = 'block';
+            document.getElementById('quiz-mode-toggle').style.display = 'none';
+            return true;
+        }
+        
+        document.getElementById('congratulations-panel').style.display = 'none';
+        document.getElementById('quiz-mode-toggle').style.display = 'flex';
+        return false;
+    }
+
+    // Get questions that are wrong or unanswered
+    function getWrongAndUnansweredQuestions() {
+        return allQuizQuestions.filter(question => {
+            const questionText = question.QuestionText;
+            const sessionStatus = sessionAnswers[questionText];
+            
+            return sessionStatus === 'wrong' || 
+                   sessionStatus === 'partial' ||
+                   sessionStatus === 'unanswered' ||
+                   (wronglyAnsweredQuestions.has(questionText) && sessionStatus !== 'correct');
+        });
+    }
+
+    // --- Local Storage Fallback Functions ---
     const LS_NUM_QUESTIONS_KEY = 'quizNumQuestions';
     const LS_ENABLE_TIMER_KEY = 'quizEnableTimer';
     const LS_TIME_LIMIT_KEY = 'quizTimeLimit';
     const LS_WRONG_ANSWERS_KEY = 'quizWrongAnswers';
     const LS_QUIZ_TITLE_KEY = 'quizTitle';
+    const LS_SESSION_ANSWERS_KEY = 'quizSessionAnswers';
 
     function loadSettingsFromLocalStorage() {
         const storedNumQuestions = localStorage.getItem(LS_NUM_QUESTIONS_KEY);
@@ -831,6 +1167,29 @@
         console.log("Settings saved to Local Storage.");
     }
 
+    function loadSessionDataFromLocalStorage() {
+        const storedSessionData = localStorage.getItem(LS_SESSION_ANSWERS_KEY);
+        if (storedSessionData) {
+            sessionAnswers = JSON.parse(storedSessionData);
+        } else {
+            sessionAnswers = {};
+        }
+        console.log("Session data loaded from Local Storage.");
+    }
+
+    function saveSessionDataToLocalStorage() {
+        localStorage.setItem(LS_SESSION_ANSWERS_KEY, JSON.stringify(sessionAnswers));
+        console.log("Session data saved to Local Storage.");
+    }
+
+    function clearSessionDataLocalStorage() {
+        sessionAnswers = {};
+        localStorage.removeItem(LS_SESSION_ANSWERS_KEY);
+        errorMessageDiv.textContent = 'Session data cleared (Local Storage)!';
+        setTimeout(() => errorMessageDiv.textContent = '', 3000);
+        console.log("Session data cleared from Local Storage.");
+    }
+
     function loadWronglyAnsweredQuestionsFromLocalStorage() {
         const storedWrongAnswers = localStorage.getItem(LS_WRONG_ANSWERS_KEY);
         if (storedWrongAnswers) {
@@ -854,7 +1213,6 @@
         console.log("Wrong answers history cleared from Local Storage.");
     }
 
-
     // --- DOM Element References ---
     const questionsContainer = document.getElementById('questions-container');
     const quizForm = document.getElementById('quiz-form');
@@ -868,15 +1226,14 @@
     const quizTitleInput = document.getElementById('quiz-title-input');
     const quizTitleDisplay = document.getElementById('quiz-title-display');
 
-
     /**
      * Loads the quiz questions, shuffles them, and renders the quiz.
      */
     function loadQuiz() {
-        enableQuizInputs(); // Reset UI state for a new quiz load
-        questionsContainer.innerHTML = 'Loading questions...'; // Show loading message
+        enableQuizInputs();
+        questionsContainer.innerHTML = 'Loading questions...';
 
-        console.log("Attempting to fetch questions.csv from:", new URL('questions.csv', window.location.href).href); // Debugging with absolute URL
+        console.log("Attempting to fetch questions.csv from:", new URL('questions.csv', window.location.href).href);
         fetch(new URL('questions.csv', window.location.href).href)
             .then(response => {
                 if (!response.ok) {
@@ -893,49 +1250,88 @@
             .then(csvText => {
                 allQuizQuestions = parseCSV(csvText);
                 if (allQuizQuestions.length === 0) {
-                    errorMessageDiv.textContent = 'No questions found in questions.csv or file is empty/malformed. Please check the file content and format (including the Explanation column).';
+                    errorMessageDiv.textContent = 'No questions found in questions.csv or file is empty/malformed. Please check the file content and format.';
                     questionsContainer.innerHTML = '';
                     quizForm.querySelector('.submit-btn').style.display = 'none';
                     return;
                 }
 
-                // Determine the number of questions for this round
-                const requestedNum = parseInt(numQuestionsInput.value);
-                const numToPractice = (!isNaN(requestedNum) && requestedNum > 0) ? Math.min(requestedNum, allQuizQuestions.length) : allQuizQuestions.length;
+                updateQuizStats();
 
-                // Prioritize wrongly answered questions
-                let prioritizedQuestions = [];
-                let otherQuestions = [];
-
-                allQuizQuestions.forEach(q => {
-                    if (wronglyAnsweredQuestions.has(q.QuestionText)) {
-                        prioritizedQuestions.push(q);
-                    } else {
-                        otherQuestions.push(q);
-                    }
-                });
-
-                // Shuffle both sets
-                shuffleArray(prioritizedQuestions);
-                shuffleArray(otherQuestions);
-
-                // Build currentQuizQuestions: prioritized first, then random others
-                currentQuizQuestions = [];
-                currentQuizQuestions.push(...prioritizedQuestions.slice(0, numToPractice));
-
-                // Fill remaining slots with other questions if needed
-                const remainingSlots = numToPractice - currentQuizQuestions.length;
-                if (remainingSlots > 0) {
-                    currentQuizQuestions.push(...otherQuestions.slice(0, remainingSlots));
+                if (checkForCongratulations()) {
+                    questionsContainer.innerHTML = '<p style="text-align: center; font-size: 1.2em; color: #28a745;">🎉 All questions mastered! Use the button above to restart with all questions. 🎉</p>';
+                    quizForm.querySelector('.submit-btn').style.display = 'none';
+                    return;
                 }
 
-                // If somehow we have more questions than requested (due to prioritization logic filling up all slots),
-                // or if `numToPractice` was very small and we had many wrong answers, truncate.
+                let questionsToLoad;
+                if (quizMode === 'retake') {
+                    questionsToLoad = getWrongAndUnansweredQuestions();
+                    if (questionsToLoad.length === 0) {
+                        checkForCongratulations();
+                        return;
+                    }
+                } else {
+                    questionsToLoad = [...allQuizQuestions];
+                }
+
+                const requestedNum = parseInt(numQuestionsInput.value);
+                const numToPractice = (!isNaN(requestedNum) && requestedNum > 0) ? Math.min(requestedNum, questionsToLoad.length) : questionsToLoad.length;
+
+                if (quizMode === 'retake') {
+                    let wrongQuestions = [];
+                    let unansweredQuestions = [];
+
+                    questionsToLoad.forEach(q => {
+                        const questionText = q.QuestionText;
+                        const sessionStatus = sessionAnswers[questionText];
+                        
+                        if (sessionStatus === 'wrong' || sessionStatus === 'partial' || (wronglyAnsweredQuestions.has(questionText) && sessionStatus !== 'correct')) {
+                            wrongQuestions.push(q);
+                        } else {
+                            unansweredQuestions.push(q);
+                        }
+                    });
+
+                    shuffleArray(wrongQuestions);
+                    shuffleArray(unansweredQuestions);
+
+                    currentQuizQuestions = [];
+                    currentQuizQuestions.push(...wrongQuestions.slice(0, numToPractice));
+
+                    const remainingSlots = numToPractice - currentQuizQuestions.length;
+                    if (remainingSlots > 0) {
+                        currentQuizQuestions.push(...unansweredQuestions.slice(0, remainingSlots));
+                    }
+                } else {
+                    let prioritizedQuestions = [];
+                    let otherQuestions = [];
+
+                    questionsToLoad.forEach(q => {
+                        if (wronglyAnsweredQuestions.has(q.QuestionText)) {
+                            prioritizedQuestions.push(q);
+                        } else {
+                            otherQuestions.push(q);
+                        }
+                    });
+
+                    shuffleArray(prioritizedQuestions);
+                    shuffleArray(otherQuestions);
+
+                    currentQuizQuestions = [];
+                    currentQuizQuestions.push(...prioritizedQuestions.slice(0, numToPractice));
+
+                    const remainingSlots = numToPractice - currentQuizQuestions.length;
+                    if (remainingSlots > 0) {
+                        currentQuizQuestions.push(...otherQuestions.slice(0, remainingSlots));
+                    }
+                }
+
                 currentQuizQuestions = currentQuizQuestions.slice(0, numToPractice);
-                shuffleArray(currentQuizQuestions); // Final shuffle to mix prioritized with others
+                shuffleArray(currentQuizQuestions);
 
                 questionsContainer.innerHTML = currentQuizQuestions.map(createQuestionElement).join('');
-                startTimer(); // Start timer after questions are loaded and rendered
+                startTimer();
             })
             .catch(error => {
                 console.error('Error loading or parsing questions.csv:', error);
@@ -945,12 +1341,8 @@
             });
     }
 
-
-    // Use a global load function for Firebase's DOMContentLoaded listener to call
-    // This ensures Firebase is initialized and authenticated before trying to load quiz data.
-    // The original DOMContentLoaded listener now only sets up event handlers for UI.
+    // Event handlers
     document.addEventListener('DOMContentLoaded', () => {
-        // Event listener for individual validate buttons (using event delegation)
         questionsContainer.addEventListener('click', (event) => {
             if (event.target.classList.contains('validate-btn')) {
                 const index = parseInt(event.target.dataset.questionIndex);
@@ -958,39 +1350,58 @@
             }
         });
 
-        // Handle form submission (validates all questions and shows final score)
         quizForm.addEventListener('submit', e => {
-            e.preventDefault(); // Prevent default form submission
+            e.preventDefault();
 
             let score = 0;
-            currentQuizQuestions.forEach((question, index) => { // Use currentQuizQuestions
-              // Validate each question and accumulate score
-              const isCorrect = validateSingleQuestion(index); // This will now show correct answer only if wrong
-              if (isCorrect) {
-                  score++;
-              }
+            let partialScore = 0;
+            currentQuizQuestions.forEach((question, index) => {
+                const result = validateSingleQuestion(index);
+                if (result === 'correct') {
+                    score++;
+                } else if (result === 'partial') {
+                    partialScore += 0.5;
+                }
             });
 
-            // Display final score
-            scoreContainer.textContent = `Your score: ${score} out of ${currentQuizQuestions.length}`;
-            disableQuizInputs(); // Disable inputs after submission
-            saveSettings(); // Save current settings to Firestore
+            const totalScore = score + partialScore;
+            const maxScore = currentQuizQuestions.length;
+            
+            let scoreText = `Your score: ${score} correct`;
+            if (partialScore > 0) {
+                scoreText += `, ${partialScore} partial credit`;
+            }
+            scoreText += ` out of ${maxScore} questions`;
+            if (partialScore > 0) {
+                scoreText += ` (Total: ${totalScore}/${maxScore})`;
+            }
+            
+            scoreContainer.textContent = scoreText;
+            disableQuizInputs();
+            saveSettings();
+            updateQuizStats();
         });
 
-        // Handle Retake Quiz button click
         document.getElementById('retake-quiz-btn').addEventListener('click', () => {
-            saveSettings(); // Save settings before retaking
-            loadQuiz(); // Reload the quiz
+            saveSettings();
+            loadQuiz();
         });
 
-        // Handle clear wrong answers button click
-        clearWrongAnswersBtn.addEventListener('click', clearWrongAnswersHistory);
+        document.getElementById('toggle-mode-btn').addEventListener('click', toggleQuizMode);
 
-        // Save settings whenever setting inputs change
+        document.getElementById('restart-all-btn').addEventListener('click', () => {
+            quizMode = 'all';
+            document.getElementById('toggle-mode-btn').textContent = 'Show All Questions';
+            document.getElementById('toggle-mode-btn').classList.remove('active');
+            loadQuiz();
+        });
+
+        clearWrongAnswersBtn.addEventListener('click', clearWrongAnswersHistory);
+        document.getElementById('clear-session-data-btn').addEventListener('click', clearSessionData);
+
         numQuestionsInput.addEventListener('change', saveSettings);
         enableTimerCheckbox.addEventListener('change', () => {
             saveSettings();
-            // Re-start timer if setting changes and quiz is not submitted
             if (enableTimerCheckbox.checked && quizForm.querySelector('.submit-btn').style.display !== 'none') {
                  startTimer();
             } else if (!enableTimerCheckbox.checked) {
@@ -998,18 +1409,10 @@
                 timerDisplay.style.display = 'none';
             }
         });
-        timeLimitMinutesInput.addEventListener('change', () => {
-            saveSettings();
-            // Re-start timer if setting changes and quiz is not submitted
-            if (enableTimerCheckbox.checked && quizForm.querySelector('.submit-btn').style.display !== 'none') {
-                startTimer();
-            }
-        });
-
-        // Update quiz title when input changes
+        timeLimitMinutesInput.addEventListener('change', saveSettings);
         quizTitleInput.addEventListener('input', () => {
-            quizTitleDisplay.textContent = quizTitleInput.value;
-            document.title = quizTitleInput.value; // Also update browser tab title
+            quizTitleDisplay.textContent = quizTitleInput.value || "Exam Preparation Quiz";
+            document.title = quizTitleInput.value || "Exam Preparation Quiz";
             saveSettings();
         });
     });
