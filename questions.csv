@@ -1,35 +1,7 @@
-QuestionNumber,QuestionType,QuestionText,OptionA,OptionB,OptionC,OptionD,LeftItems,RightItems,CorrectMatches,Answer 1,Answer 2,Answer 3,BlankAnswers,Explanation
-1,multiple-choice,"Which tool is used for performance analysis in Pega Platform?","Performance Analyzer (PAL)","Tracer","Application Profiler","System Management Application",,,,A,,,,"The Performance Analyzer (PAL) is specifically designed for gathering and analyzing performance data in Pega Platform applications."
-2,fill-blank,"In Pega Platform, the ___ is used to track case progress and the ___ defines the business logic for processing cases.",,,,,,,,,"case life cycle","decision rules",,,"Case life cycle tracks progress while decision rules define business logic for case processing."
-3,matching,"Match each Pega Platform component with its primary purpose:",,,,"Rules,Data Pages,Activities","Store business logic,Cache external data,Execute sequential steps","Rules-Store business logic,Data Pages-Cache external data,Activities-Execute sequential steps",,,,,,"Rules contain business logic, Data Pages cache data, and Activities execute procedural steps."
-4,true-false,"Pega Platform supports both online and offline mobile applications.",True,False,,,,,,,A,,,,"Pega Platform provides comprehensive mobile support including offline capabilities for mobile applications."
-5,text-input,"What is the primary benefit of using a keyed data page in Pega Platform?",,,,,,,,,"Keyed data pages allow efficient retrieval of specific records using a unique identifier, improving performance and reducing memory usage.",,,,"Keyed data pages provide efficient data retrieval using unique identifiers."
-6,multiple-choice,"Which of the following is the primary purpose of case hierarchy in Pega?","To organize cases by priority","To enable parent-child relationships between cases","To sort cases alphabetically","To archive completed cases",,,,B,,,,"Case hierarchy allows parent cases to spawn and manage child cases, enabling complex business processes."
-
-7,fill-blank,"In Pega's case management, ___ define the stages of work while ___ define the individual tasks within each stage.",,,,,,,,,"case stages","case steps",,,"Case stages provide high-level workflow organization while case steps define specific tasks."
-
-8,matching,"Match Pega architecture components with their functions:",,,,"Node Types,Load Balancer,Database,Search Engine","Process requests,Distribute traffic,Store data,Index content","Node Types-Process requests,Load Balancer-Distribute traffic,Database-Store data,Search Engine-Index content",,,,,,"Each component plays a specific role in Pega's distributed architecture."
-
-9,true-false,"Pega's PRPC engine can only run on Windows servers.",True,False,,,,,,,B,,,,"Pega Platform is cross-platform and supports multiple operating systems including Linux and Unix."
-
-10,text-input,"What is the recommended approach for handling large volumes of data in Pega applications?",,,,,,,,,"Use database views, pagination, and asynchronous processing",,,,"Large data volumes require optimized data access patterns and processing strategies."
-
-11,multiple-choice,"Which authentication method is recommended for enterprise Pega deployments?","Basic authentication","LDAP/Active Directory","Pega native authentication","No authentication",,,,B,,,,"Enterprise environments typically integrate with existing LDAP/AD infrastructure for centralized user management."
-
-12,fill-blank,"In Pega DevOps, ___ environments are used for development while ___ environments are used for user acceptance testing.",,,,,,,,,"development","staging",,,"Development environments support coding while staging environments support pre-production testing."
-
-13,matching,"Match Pega rule types with their primary uses:",,,,"Flow Action,Section,When Rule,Data Transform","User interactions,UI layout,Conditional logic,Data mapping","Flow Action-User interactions,Section-UI layout,When Rule-Conditional logic,Data Transform-Data mapping",,,,,,"Each rule type serves specific functionality in Pega applications."
-
-14,true-false,"Pega applications automatically scale horizontally without configuration.",True,False,,,,,,,B,,,,"Horizontal scaling requires proper configuration of load balancers and cluster settings."
-
-15,text-input,"What is the primary benefit of using Pega's declarative processing?",,,,,,,,,"Automatic execution of business rules without explicit coding",,,,"Declarative processing automatically triggers rule execution based on data changes."
-
-16,multiple-choice,"Which Pega feature helps ensure application performance at scale?","Dynamic Class Loading","Requestor pooling","Both A and B","Neither A nor B",,,,C,,,,"Both dynamic class loading and requestor pooling are essential for scalable Pega applications."
-
-17,fill-blank,"Pega's ___ feature allows real-time decision making while ___ enables batch processing of large datasets.",,,,,,,,,"Decision Management","ETL tools",,,"Decision Management provides real-time capabilities while ETL handles batch processing."
-
-18,matching,"Match deployment strategies with their characteristics:",,,,"Blue-Green,Rolling,Canary,Big Bang","Zero downtime switch,Gradual rollout,Limited exposure test,All at once","Blue-Green-Zero downtime switch,Rolling-Gradual rollout,Canary-Limited exposure test,Big Bang-All at once",,,,,,"Each deployment strategy offers different risk and downtime profiles."
-
-19,true-false,"Pega's Constellation UI framework is based on React components.",True,False,,,,,,,A,,,,"Constellation is indeed built on React technology for modern user interfaces."
-
-20,text-input,"What is the recommended pattern for handling integrations in enterprise Pega applications?",,,,,,,,,"Use service-oriented architecture with REST/SOAP services and proper error handling",,,,"Enterprise integrations should follow SOA patterns with robust error handling and monitoring."
+QuestionNumber,QuestionType,QuestionText,OptionA,OptionB,OptionC,OptionD,LeftItems,RightItems,CorrectMatches,Answer 1,Answer 2,Answer 3,Answer 4,Answer 5,BlankAnswers,Explanation
+1,multiple-choice,What is 2+2?,3,4,5,6,,,,B,,,,,,"Basic arithmetic: 2+2=4"
+2,multiple-choice,Which are prime numbers?,2,4,3,6,,,,A,C,,,,,"Prime numbers are only divisible by 1 and themselves"
+3,true-false,The sun is a star,True,False,,,,,B,,,,,,"The sun is indeed a star, specifically a G-type main-sequence star"
+4,text-input,What is the largest ocean?,,,,,,,Pacific,pacific,PACIFIC,,,,"The Pacific Ocean covers about 46% of Earth's water surface"
+5,fill-blank,The ___ revolves around the ___,,,,,,,,,,,,"Earth,Sun","Earth orbits the Sun due to gravitational force"
+6,matching,Match countries with capitals,,,,,"France,Germany,Italy","Paris,Berlin,Rome","France-Paris,Germany-Berlin,Italy-Rome",,,,,,,"Basic geography knowledge about European capitals"
