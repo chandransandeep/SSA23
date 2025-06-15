@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Enhanced Exam Preparation Quiz</title>
+  
+  <!-- Stylesheets -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles/main.css">
+  <link rel="stylesheet" href="styles/question-types.css">
+  <link rel="stylesheet" href="styles/auth.css">
+</head>
+<body>
+  <!-- Authentication Container -->
+  <div id="auth-container" class="auth-container">
+    <div class="auth-form">
+      <h2>Sign In to Your Study Buddy Account</h2>
+      <div id="auth-error" class="error-message" style="display: none;"></div>
+      
+      <div class="auth-tabs">
+        <button id="signin-tab" class="tab-btn active" onclick="showSignIn()">Sign In</button>
+        <button id="signup-tab" class="tab-btn" onclick="showSignUp()">Sign Up</button>
+      </div>
+      
+      <form id="signin-form" style="display: block;">
+        <input type="email" id="signin-email" placeholder="Email" required>
+        <input type="password" id="signin-password" placeholder="Password" required>
+        <button type="submit">Sign In</button>
+      </form>
+      
+      <form id="signup-form" style="display: none;">
+        <input type="email" id="signup-email" placeholder="Email" required>
+        <input type="password" id="signup-password" placeholder="Password (min 6 characters)" required>
+        <input type="password" id="confirm-password" placeholder="Confirm Password" required>
+        <button type="submit">Create Account</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Quiz Container -->
+  <div id="quiz-container" style="display: none;">
+    <h1 id="quiz-title-display">Enhanced Exam Preparation Quiz</h1>
+    
+    <!-- User Info with Sign Out -->
+    <div class="user-info">
+      <span id="user-id-display">Authenticating...</span>
+      <button id="signout-btn" onclick="window.signOutUser()">Sign Out</button>
+    </div>
+    
+    <div class="quiz-content">
+      <div class="settings-panel">
+          <label for="quiz-title-input">Quiz Title:</label>
+          <input type="text" id="quiz-title-input" placeholder="e.g., My Biology Exam Prep" value="Enhanced Exam Preparation Quiz">
+          <br><br>
+          
+          <label for="num-questions">Number of Questions to Practice (leave blank for all):</label>
+          <input type="number" id="num-questions" min="1" placeholder="All" value="10">
+          <br><br>
+          
+          <label>
+              <input type="checkbox" id="enable-timer-checkbox"> Enable Timer
+          </label>
+          <label for="time-limit-minutes" style="margin-top: 5px;">Time Limit (minutes):</label>
+          <input type="number" id="time-limit-minutes" min="1" value="10">
+          <br><br>
+          
+          <button type="button" id="clear-wrong-answers-btn">Clear Wrong Answers History</button>
+          <button type="button" id="clear-session-data-btn">Clear Session Data</button>
+      </div>
+
+      <!-- Congratulations Panel -->
+      <div id="congratulations-panel" class="congratulations-panel">
+          <h3>🎉 Congratulations! 🎉</h3>
+          <p>You've mastered all the questions! All previously incorrect answers have been answered correctly.</p>
+          <button type="button" id="restart-all-btn">Restart with All Questions</button>
+      </div>
+
+      <!-- Quiz Mode Toggle -->
+      <div id="quiz-mode-toggle" class="quiz-mode-toggle">
+          <button type="button" id="toggle-mode-btn" class="toggle-button active">Retake Only Wrong/Unanswered</button>
+          <div class="quiz-stats" id="quiz-stats">
+              Wrong: <span id="wrong-count">0</span> | 
+              Unanswered: <span id="unanswered-count">0</span> | 
+              Correct: <span id="correct-count">0</span>
+          </div>
+      </div>
+
+      <div id="timer-display"></div>
+
+      <form id="quiz-form">
+        <div id="questions-container">Loading questions...</div>
+        <button type="submit" class="submit-btn">Submit Answers</button>
+        <button type="button" id="retake-quiz-btn" class="retake-btn">Retake Quiz</button>
+      </form>
+      
+      <div id="score-container" class="score-container"></div>
+      <div id="error-message" class="error-message"></div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script type="module" src="scripts/firebase-config.js"></script>
+  <script type="module" src="scripts/quiz-core.js"></script>
+  
+  <script>
+    // Authentication UI functions
+    function showSignIn() {
+        document.getElementById('signin-form').style.display = 'block';
+        document.getElementById('signup-form').style.display = 'none';
+        document.getElementById('signin-tab').classList.add('active');
+        document.getElementById('signup-tab').classList.remove('active');
+        const errorElement = document.getElementById('auth-error');
+        errorElement.textContent = '';
+        errorElement.style.display = 'none';
+    }
+
+    function showSignUp() {
+        document.getElementById('signin-form').style.display = 'none';
+        document.getElementById('signup-form').style.display = 'block';
+        document.getElementById('signin-tab').classList.remove('active');
+        document.getElementById('signup-tab').classList.add('active');
+        const errorElement = document.getElementById('auth-error');
+        errorElement.textContent = '';
+        errorElement.style.display = 'none';
+    }
+
+    // Form event listeners
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('signin-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('signin-email').value;
+            const password = document.getElementById('signin-password').value;
+            await window.signIn(email, password);
+        });
+
+        document.getElementById('signup-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('signup-email').value;
+            const password = document.getElementById('signup-password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+            
+            const errorElement = document.getElementById('auth-error');
+            
+            if (password !== confirmPassword) {
+                errorElement.textContent = 'Passwords do not match';
+                errorElement.style.display = 'block';
+                return;
+            }
+            
+            if (password.length < 6) {
+                errorElement.textContent = 'Password must be at least 6 characters';
+                errorElement.style.display = 'block';
+                return;
+            }
+            
+            await window.signUp(email, password);
+        });
+    });
+  </script>
+</body>
+</html>
